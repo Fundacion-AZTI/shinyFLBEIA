@@ -16,8 +16,10 @@ If you are familiar with Github, follow these steps:
 
 ### 2. Using R only
 
-You only need to run the following line in R:
+You only need to run the following line in R (make sure you have the `shiny` R package installed):
 
-`shiny::runGithub("shinyFLBEIA", "Fundacion-AZTI")`
+``` r
+shiny::runGitHub("shinyFLBEIA", "Fundacion-AZTI")
+```
 
 Regardless the method you choose to run the app locally, the first thing you will be asked is to upload the MSE results (`.flbeia` file). The MSE developers should provide you that file.
