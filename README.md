@@ -4,13 +4,14 @@ This is the source code of the FLBEIA Shiny App, designed to explore results fro
 
 An URL link should be provided by the MSE developers to the interested audience in order to access the Shiny App with loaded MSE results.
 
-For R users, the Shiny App can also be run locally following these steps:
+For R users, the Shiny App can also be run locally in two ways presented below.
 
-### 1. Clone or Download This Repository
+### For R and Github users (recommended)
 
-If you are familiar with Github, clone this repository on your computer.
+If you are familiar with Github, follow these steps: 
 
-If you are not familiar with Github, download this repository by clicking the green button "Code", and then "Download ZIP".
+1. Clone this repository.
+2. 
 
 ### 2. Open Project on RStudio
 
