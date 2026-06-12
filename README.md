@@ -4,7 +4,7 @@ This is the source code of the FLBEIA Shiny App, designed to explore results fro
 
 An URL link should be provided by the MSE developers to the interested audience in order to access the Shiny App with loaded MSE results.
 
-For R users, the Shiny App can also be run locally in two recommended ways presented below.
+For R users, the Shiny App can also be run locally in two recommended ways presented below and tested using R 4.6.0.
 
 ### 1. Using Github
 

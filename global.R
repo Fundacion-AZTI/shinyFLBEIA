@@ -34,7 +34,7 @@ library(tibble)
 
 default_MSE = "NALB"
 run_locally = TRUE # TRUE = run app locally, FALSE = when deploying on shinyapps.io
-
+# IMPORTANT: never commit run_locally = FALSE to Github repo
 
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
