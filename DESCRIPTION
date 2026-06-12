@@ -1,0 +1,39 @@
+Package: shinyFLBEIA
+Title: FLBEIA Shiny App
+Version: 0.1
+Authors@R: c(
+    person("Giancarlo M.", "Correa", role = c("aut", "cre"),
+           email = "gmoron@azti.es",
+           comment = c(ORCID = "0000-0003-0682-1152"))
+           )
+Description: Shiny App to explore results from Management Strategy Evaluations implemented in the FLBEIA software.
+Depends:
+    R (>= 4.6.0)
+Imports:
+    bslib,
+    colorspace,
+    curl,
+    dplyr,
+    DT,
+    ggh4x,
+    ggplot2,
+    ggrepel,
+    htmltools,
+    markdown,
+    plotly,
+    purrr,
+    reshape2,
+    rlang,
+    scales,
+    shiny,
+    shinycssloaders,
+    thematic,
+    tidyr,
+    viridis,
+    waiter,
+    ggradar,
+    tibble
+URL: https://flbeia.azti.es/
+BugReports: https://github.com/Fundacion-AZTI/shinyFLBEIA/issues
+License: GPL-3
+LazyData: true

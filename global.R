@@ -1,4 +1,8 @@
 
+# Install dependencies when running shiny::runGithub():
+if (!require("remotes")) install.packages("remotes")
+remotes::install_deps(dependencies = TRUE)
+
 # -------------------------------------------------------------------------
 # Required libraries
 
@@ -23,6 +27,7 @@ library(ggh4x)
 library(purrr)
 library(htmltools)
 library(markdown)
+library(tibble)
 
 # -------------------------------------------------------------------------
 # Select default MSE or MSE you want to explore
