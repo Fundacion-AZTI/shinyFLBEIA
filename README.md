@@ -11,7 +11,7 @@ For R users, the Shiny App can also be run locally in two recommended ways prese
 If you are familiar with Github, follow these steps: 
 
 - Clone this repository
-- Open the project: `shinyFLBEIA.Rproj` in Rstudio or any other IDE
+- Open the project `shinyFLBEIA.Rproj` in Rstudio or any other IDE
 - Run `shiny::runApp()` (make sure you have the `shiny` R package installed)
 
 ### 2. Using R only
