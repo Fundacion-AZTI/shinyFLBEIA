@@ -127,6 +127,499 @@ KOBE_process = function(myoutput) {
 }
 
 # -------------------------------------------------------------------------
+# Functions to calculate PIs
+# IMPORTANT: PI Code should match, check your PI data.frame
+PI_calculation = function(mp_list, tac_list, myoutput, 
+                          sim_yr_str, om_iter, nMP, nST, nOM,
+                          pi_pos = NULL, pi_code = NULL) {
+  
+  # minimum SSB/SSB_msy
+  if(pi_code == 'minB') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = min(bbmsy), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # mean SSB/SSB_msy
+  if(pi_code == 'meanB') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(bbmsy), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # mean F/F_msy
+  if(pi_code == 'meanF') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(ffmsy), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # probability being in green quadrant
+  if(pi_code == 'PGK') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          mutate(green = if_else(bbmsy > 1 & ffmsy < 1, 1, 0)) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(green), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # probability being in red quadrant
+  if(pi_code == 'PRK') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          mutate(red = if_else(bbmsy < 1 & ffmsy > 1, 1, 0)) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(red), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # probability above Blim
+  if(pi_code == 'PBlim') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          mutate(prob = if_else(ssb > 0.4*SSB_MSY, 1, 0)) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(prob), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # probability above Blim and below Bmsy
+  if(pi_code == 'PBmsy') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          mutate(prob = if_else(ssb > 0.4*SSB_MSY & ssb < SSB_MSY, 1, 0)) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(prob), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # Mean Catch Short Term:
+  if(pi_code == 'Cstr') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str & year < (sim_yr_str+3)) %>%
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(catch), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Mean Catch Medium Term:
+  if(pi_code == 'Cmed') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= (sim_yr_str+5) & year < (sim_yr_str+10)) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(catch), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Mean Catch Long Term:
+  if(pi_code == 'Clon') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= (sim_yr_str+15) & year < (sim_yr_str+25)) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(catch), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Mean TAC Short Term:
+  if(pi_code == 'Tstr') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str & year < (sim_yr_str+3)) %>%
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(tac), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Mean TAC Medium Term:
+  if(pi_code == 'Tmed') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= (sim_yr_str+5) & year < (sim_yr_str+10)) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(tac), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Mean TAC Long Term:
+  if(pi_code == 'Tlon') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= (sim_yr_str+15) & year < (sim_yr_str+25)) %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(tac), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # TAC uptake:
+  if(pi_code == 'Tupt') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- mp_list[[i]] %>% 
+          filter(year >= sim_yr_str) %>%
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean((catch/tac))*100, .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # TAC SD:
+  if(pi_code == 'Tsd') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- tac_list[[i]] %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>%
+            group_by(iter_gr) %>%
+            summarise(value = sd(tac), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # TAC Change:
+  if(pi_code == 'Tc') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- tac_list[[i]] %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
+            group_by(iter_gr) %>%
+            arrange(tac_period) %>%
+            mutate(diff = (tac - lag(tac))/lag(tac)) %>% 
+            na.omit %>% 
+            group_by(iter_gr) %>%
+            summarise(value = mean(abs(diff))*100, .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Probability abs TAC Change > 10%:
+  if(pi_code == 'PTcx') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- tac_list[[i]] %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
+            group_by(stock, iter_gr, scenario) %>%
+            arrange(tac_period) %>%
+            mutate(diff = (tac - lag(tac))/lag(tac)) %>%
+            na.omit %>% mutate(prob = abs(diff) > 0.1) %>%
+            group_by(iter_gr) %>%
+            summarise(value = mean(prob), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = TRUE
+    
+  }
+  
+  # Max Change in TAC
+  if(pi_code == 'Tcmax') {
+    
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        tmp <- tac_list[[i]] %>% 
+          filter(stock == myoutput$stocks[s]) %>%
+          left_join(om_iter, by = "iter") 
+        for(k in 1:nOM) {
+          tmp2 = tmp %>%
+            filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
+            group_by(stock, iter_gr, scenario) %>%
+            arrange(tac_period) %>%
+            mutate(diff = (tac - lag(tac))/lag(tac)) %>%
+            na.omit %>% 
+            group_by(iter_gr) %>%
+            summarise(value = max(abs(diff)*100), .groups = "drop")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nsim)
+          tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
+          myoutput$pi$value[s,,k,i,pi_pos] = tmp3
+        }
+      }
+    }
+    # Decimal in table?
+    myoutput$pi$is_decimal[pi_pos] = FALSE
+    
+  }
+  
+  # Return
+  return(myoutput)
+  
+}
+
+
+# -------------------------------------------------------------------------
 
 PI_process = function(myoutput) {
   
@@ -151,407 +644,15 @@ PI_process = function(myoutput) {
                                              MPs = myoutput$mp$metadata$Code,
                                              PIs = myoutput$pi$metadata$Code))
   
-  # Counter
-  count_i = 1
+  # Create decimal PI vector:
+  myoutput$pi$is_decimal = rep(NA, times = nPI)
   
-  # 1: minB
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = min(bbmsy), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
+  # Fill PI values:
+  for(j in 1:nPI) {
+    myoutput = PI_calculation(mp_list, tac_list, myoutput, 
+                              sim_yr_str, om_iter, nMP, nST, nOM,
+                              pi_pos = j, pi_code = myoutput$pi$metadata$Code[j])
   }
-  count_i = count_i + 1
-  
-  # 2: meanB
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(bbmsy), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  
-  # 3: meanF
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(ffmsy), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  
-  # 4: PGK:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        mutate(green = if_else(bbmsy > 1 & ffmsy < 1, 1, 0)) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(green), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 5: PRK:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        mutate(red = if_else(bbmsy < 1 & ffmsy > 1, 1, 0)) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(red), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  
-  # 6: PBLIM:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        mutate(prob = if_else(ssb > 0.4*SSB_MSY, 1, 0)) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(prob), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  
-  # 7: PBMSY:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        mutate(prob = if_else(ssb > 0.4*SSB_MSY & ssb < SSB_MSY, 1, 0)) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(prob), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 8: Mean Catch Short Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str & year < (sim_yr_str+3)) %>%
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(catch), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 9: Mean Catch Medium Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= (sim_yr_str+5) & year < (sim_yr_str+10)) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(catch), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 10: Mean Catch Long Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= (sim_yr_str+15) & year < (sim_yr_str+25)) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(catch), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 11: Mean TAC Short Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str & year < (sim_yr_str+3)) %>%
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(tac), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 12: Mean TAC Medium Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= (sim_yr_str+5) & year < (sim_yr_str+10)) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(tac), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 13: Mean TAC Long Term:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= (sim_yr_str+15) & year < (sim_yr_str+25)) %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(tac), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 14: TAC Uptake:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- mp_list[[i]] %>% 
-        filter(year >= sim_yr_str) %>%
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean((catch/tac))*100, .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 15: TAC SD:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- tac_list[[i]] %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>%
-          group_by(iter_gr) %>%
-          summarise(value = sd(tac), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 16: TAC Change:
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- tac_list[[i]] %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
-          group_by(iter_gr) %>%
-          arrange(tac_period) %>%
-          mutate(diff = (tac - lag(tac))/lag(tac)) %>% 
-          na.omit %>% 
-          group_by(iter_gr) %>%
-          summarise(value = mean(abs(diff))*100, .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 17: PTX
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- tac_list[[i]] %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
-          group_by(stock, iter_gr, scenario) %>%
-          arrange(tac_period) %>%
-          mutate(diff = (tac - lag(tac))/lag(tac)) %>%
-          na.omit %>% mutate(prob = abs(diff) > 0.1) %>%
-          group_by(iter_gr) %>%
-          summarise(value = mean(prob), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  count_i = count_i + 1
-  
-  # 18: MAXTc
-  for(i in 1:nMP) {
-    for(s in 1:nST) {
-      tmp <- tac_list[[i]] %>% 
-        filter(stock == myoutput$stocks[s]) %>%
-        left_join(om_iter, by = "iter") 
-      for(k in 1:nOM) {
-        tmp2 = tmp %>%
-          filter(scenario == myoutput$om$metadata$Level[k]) %>% ungroup() %>%
-          group_by(stock, iter_gr, scenario) %>%
-          arrange(tac_period) %>%
-          mutate(diff = (tac - lag(tac))/lag(tac)) %>%
-          na.omit %>% mutate(prob = abs(diff) > 0.1) %>%
-          group_by(iter_gr) %>%
-          summarise(value = max(abs(diff)*100), .groups = "drop")
-        # To save results, Do this because somethings some iters are missing:
-        tmp3 = rep(NA, times = nsim)
-        tmp3[match(tmp2$iter_gr, 1:nsim)] = tmp2 %>% pull(value)
-        myoutput$pi$value[s,,k,i,count_i] = tmp3
-      }
-    }
-  }
-  
-  # Define probability PIs
-  myoutput$pi$is_decimal = c(rep(TRUE, times = 7), 
-                             rep(FALSE, times = 9), 
-                             rep(TRUE, times = 1),
-                             rep(FALSE, times = 1))
   
   # Output:
   return(myoutput)
