@@ -517,6 +517,7 @@ ui = fluidPage(
         ),
         nav_panel(
           "Violin",
+          uiOutput("opts_perf_choices_violin"),
           shinycssloaders::withSpinner(
             plotOutput("box_plot", height = plot_height),
             type = load_img_type,

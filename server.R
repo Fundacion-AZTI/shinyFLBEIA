@@ -175,6 +175,7 @@ server = function(input, output, session) {
   # Performance:
   oth_setts_perf_1 = reactive ({ tt("col_scaling", lang_code()) })
   oth_setts_perf_2 = reactive ({ tt("col_mp_leg", lang_code()) })
+  oth_setts_perf_violin = reactive ({ tt("inc_pi_dots", lang_code()) })
   # Fleet:
   oth_setts_fleet_1 = reactive ({ 
     opts_vec = c("median", "mean")
@@ -457,6 +458,7 @@ server = function(input, output, session) {
         br(),
         kobe_txt_3(),
         br(),
+        tags$img(src = "kobe_time.png", height = "160px"),
         br(),
         std_txt_4(), # Standard text
         kobe_txt_4(),
@@ -486,7 +488,7 @@ server = function(input, output, session) {
         br(),
         perf_txt_3(),
         br(),
-        tags$img(src = "violin.png", height = "120px"),
+        tags$img(src = "violin.png", height = "140px"),
         br(),
         std_txt_4(), # Standard text
         perf_txt_4(),
@@ -670,7 +672,7 @@ server = function(input, output, session) {
         numericInput("dpi_perf_box", dwn_sett_5(), value = dwn_res, min = 72),
         footer = tagList(
           modalButton(dwn_sett_6()),
-          downloadButton("dwn_plot_perf_box", dwn_sett_6())
+          downloadButton("dwn_plot_perf_box", dwn_sett_7())
         )
       )
     )
@@ -902,6 +904,12 @@ server = function(input, output, session) {
     checkboxInput(
       inputId = "opts_perf_spd",
       label = oth_setts_perf_2()
+    )
+  })
+  output$opts_perf_choices_violin <- renderUI({
+    checkboxInput(
+      inputId = "opts_perf_violin",
+      label = oth_setts_perf_violin()
     )
   })
   # Fleet:
@@ -1793,11 +1801,14 @@ server = function(input, output, session) {
     }
     
     t1 = datatable(mytab, filter = 'top', 
-                   extensions = 'Buttons',
+                   extensions = c('Buttons', 'FixedColumns'),
                    options = list(dom = 'tB',
                                   autoWidth = TRUE,
                                   buttons = c('copy', 'csv'),
-                                  pageLength = nrow(mytab)),
+                                  pageLength = nrow(mytab),
+                                  scrollX = TRUE,
+                                  fixedColumns = list(leftColumns = 1)  # freeze rownames
+                              ),
                    caption = tags$caption(
                      style = "caption-side: top; font-weight: bold; font-size: 18px;",
                      tab_caption
@@ -1952,22 +1963,31 @@ server = function(input, output, session) {
     mytab = perf_dat() %>% filter(Stock == these_stocks,
                                 MPs %in% sel_mps_perf(),
                                 PIs %in% sel_pis_perf()) 
-    # mytab = mytab %>%
-    #   group_by(MPs, PIs) %>%
-    #   summarise(q1min = quantile(value, probs = 0.05), 
-    #             q1max = quantile(value, probs = 0.95),
-    #             q2min = quantile(value, probs = 0.25),
-    #             q2max = quantile(value, probs = 0.75),
-    #             med = quantile(value, probs = 0.5),
-    #             .groups = "drop")
+    mytab_summ = mytab %>%
+      group_by(MPs, PIs) %>%
+      summarise(q1min = quantile(value, probs = 0.05),
+                q1max = quantile(value, probs = 0.95),
+                q2min = quantile(value, probs = 0.25),
+                q2max = quantile(value, probs = 0.75),
+                med = quantile(value, probs = 0.5),
+                .groups = "drop")
     
     # Make plot:
-    p1 = ggplot(data = mytab, aes(x = MPs, y = value, fill = MPs)) +
-      # geom_point(size = 2) +
-      # geom_pointrange(aes(ymin = q1min, ymax = q1max)) +
-      # geom_pointrange(aes(ymin = q2min, ymax = q2max), linewidth = 1.75) +
-      geom_violin() +
-      scale_fill_manual(values = my_col_vec()) +
+    p1 = ggplot(data = mytab, aes(x = MPs, y = value)) 
+      
+    # Add all values in background:
+    if(isTRUE(input$opts_perf_violin)) {
+      p1 = p1 + 
+        geom_point(size = 0.5, alpha = 0.25, position = position_jitter(width = 0.1, height = 0)) 
+    }
+      
+    p1 = p1 +  
+      geom_pointrange(data = mytab_summ, aes(y = med, ymin = q1min, ymax = q1max, color = MPs)) +
+      geom_pointrange(data = mytab_summ, aes(y = med, ymin = q2min, ymax = q2max, color = MPs), linewidth = 1.75) +
+      geom_point(data = mytab_summ, aes(y = med, color = MPs), size = 2.5) +
+      # geom_violin() +
+      # scale_fill_manual(values = my_col_vec()) +
+      scale_color_manual(values = my_col_vec()) +
       ylab(NULL) + xlab(NULL) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
                          guide = guide_axis(check.overlap = TRUE)) +

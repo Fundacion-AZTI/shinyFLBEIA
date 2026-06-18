@@ -37,13 +37,13 @@ i18n_translations <- list(
          This categorization depends on fishing mortality and biomass relative to reference points (e.g., maximum sustainable yield).
          The larger colored dots represent the median value for the final year of the projection period, and they are",
     help_kobe_2 = "Error bars around medians, represented as dotted lines, can be added. Values over projection years can also be added.",
-    help_kobe_3 = "Changes in stock status probability over projection years by MPs are shown in the 'By Year' tab.",
+    help_kobe_3 = "Changes in stock status probability over projection years by MPs are shown in the 'By Year' tab. A horizontal dashed line could also be displayed, indicating a reference probability value of being in the green quadrant.",
     help_kobe_4 = "MPs, see ",
     help_perf_1 = "The quilt table compares the selected PIs (columns) by MP (rows). 
          Color shading can be added, where color intensity ranges from lowest to highest value by PI (column). 
          Displayed PIs are the mean",
     help_perf_2 = "The spider (or radar) plot compares multiple PIs (axes) across different MPs, with each MP is shown as a separate colored line whose distance from the center reflects its values.",
-    help_perf_3 = "The violin shows where the selected PI values are concentrated and how they are distributed, using width to represent frequency. 
+    help_perf_3 = "The violin shows the median of PI values (colored dot) and the 90% and 50% interquartile range (colored thinner and thicker vertical lines, respectively). All PI values are represented as gray dots in the background. 
          Panels represent selected PI while x-axis and colors represent MPs.",
     help_perf_4 = "MPs and PIs, see ",
     help_td_1 = "This chart shows the trade-off between two selected PIs by MP (colored dots). PIs are the mean",
@@ -84,6 +84,7 @@ i18n_translations <- list(
     x_range = "X-Axis Range",
     y_range = "Y-Axis Range",
     percentile_kobe = "Percentile",
+    inc_pi_dots = "Show all values in background?",
     trafeoff_x_axis = "X Axis Performance Indicator",
     trafeoff_y_axis = "Y Axis Performance Indicator",
     color_blind = "Use colorblind-friendly palette?",
@@ -133,13 +134,13 @@ i18n_translations <- list(
     Esta categorización depende de valores de mortalidad por pesca y biomasa relativos a puntos de referencia (p.ej., máximo rendimiento sostenible).
     Los puntos más grandes representan la mediana para el año final del periodo de proyección,",
     help_kobe_2 = "Barras de errores alrededor de la mediana, representado por líneas punteadas, puede ser agregado. Valores para cada año del periodo de proyección también puede ser añadido.",
-    help_kobe_3 = "Cambios en la probabilidad del estado del stock a lo largo de los años del periodo de proyección por MP es mostrado en la pestaña 'Por Año'.",
+    help_kobe_3 = "Cambios en la probabilidad del estado del stock a lo largo de los años del periodo de proyección por MP es mostrado en la pestaña 'Por Año'. También podría mostrarse una línea discontinua horizontal que indicara un valor de probabilidad de referencia para situarse en el cuadrante verde.",
     help_kobe_4 = "MPs, ver ",
     help_perf_1 = "La tabla 'Quilt' compara los PIs seleccionados (columnas) por MP (filas).
          Sombreado para cada celda puede ser añadido, donde la intensidad de color varía desde el valor más bajo al más alto de cada PI.
          Los PIs mostrados son la media",
     help_perf_2 = "El gráfico 'Spider' (o de radar) compara varios PIs (ejes) entre diferentes MPs, y cada MP se representa mediante una línea de color independiente cuya distancia al centro refleja sus valores.",
-    help_perf_3 = "El gráfico de violín muestra dónde se concentran los valores de PI seleccionados y cómo se distribuyen, utilizando la anchura para representar la frecuencia. 
+    help_perf_3 = "El gráfico muestra la mediana de los valores del PI (punto de color) y los rangos intercuartílicos del 90 % y del 50 % (líneas verticales de color más finas y más gruesas, respectivamente). Todos los valores del PI se representan como puntos grises en el fondo. 
          Los paneles representan los PI seleccionados, mientras que el eje X y los colores representan los MPs.",
     help_perf_4 = "MPs y PIs, ver ",
     help_td_1 = "Este gráfico muestra el 'trade-off' entre dos PI seleccionadas por MP (puntos coloreados). PIs son la media",
@@ -180,6 +181,7 @@ i18n_translations <- list(
     x_range = "Rango Eje X",
     y_range = "Rango Eje Y",
     percentile_kobe = "Percentil",
+    inc_pi_dots = "Mostrar todos los valores en el fondo?",
     trafeoff_x_axis = "Indicador de Desempeño Eje X",
     trafeoff_y_axis = "Indicador de Desempeño Eje Y",
     color_blind = "¿Usar paleta amigable para daltónicos?",
@@ -229,13 +231,13 @@ i18n_translations <- list(
          Cette classification dépend de la mortalité par pêche et de la biomasse par rapport à des points de référence (par exemple, le rendement maximal durable).
          Les points colorés les plus grands représentent la valeur médiane pour la dernière année de la période de projection, et ils sont",
     help_kobe_2 = "Il est possible d'ajouter des barres d'erreur autour des médianes, représentées par des lignes pointillées. Des valeurs pour les années de projection peuvent également être ajoutées.",
-    help_kobe_3 = "Les variations de la probabilité de l'état des stocks au cours des années de projection, par MP, sont présentées dans l'onglet 'Par année'.",
+    help_kobe_3 = "Les variations de la probabilité de l'état des stocks au cours des années de projection, par MP, sont présentées dans l'onglet 'Par année'. Une ligne pointillée horizontale pourrait également s'afficher, indiquant une valeur de probabilité de référence correspondant au fait de se trouver dans le quadrant vert.",
     help_kobe_4 = "MPs, voir ",
     help_perf_1 = "Le tableau 'Quilt' présente les indices de performance (PI) sélectionnés (colonnes) par modèle de performance (MP) (lignes). 
          Il est possible d'ajouter un dégradé de couleurs, l'intensité de la couleur variant de la valeur la plus basse à la plus élevée pour chaque PI (colonne). 
          Les PI affichés correspondent à la moyenne",
     help_perf_2 = "Le graphique 'Spider' (ou radar) compare plusieurs PIs (axes) entre différents MPs, chaque MP étant représenté par une ligne colorée distincte dont la distance par rapport au centre reflète ses valeurs.",
-    help_perf_3 = "Le graphique en violon montre où se concentrent les valeurs PI sélectionnées et comment elles sont réparties, la largeur représentant la fréquence. 
+    help_perf_3 = "Le graphique en forme de violon représente la médiane des valeurs PI (point coloré) ainsi que les limites à 90 % et 50 % de l'écart interquartile (lignes verticales colorées plus fines et plus épaisses, respectivement). Toutes les valeurs PI sont représentées par des points gris en arrière-plan. 
          Les panneaux représentent les PI sélectionnées, tandis que l'axe des x et les couleurs représentent les MPs.",
     help_perf_4 = "MPs et PIs, voir ",
     help_td_1 = "Ce graphique illustre le compromis entre deux indicateurs de performance (PI) sélectionnés par MP (points colorés). Les PI correspondent à la moyenne",
@@ -276,6 +278,7 @@ i18n_translations <- list(
     x_range = "Plage de l'axe X",
     y_range = "Plage de l'axe Y",
     percentile_kobe = "Percentile",
+    inc_pi_dots = "Afficher toutes les valeurs en arrière-plan?",
     trafeoff_x_axis = "Indicateur de Performance Axe X",
     trafeoff_y_axis = "Indicateur de Performance Axe Y",
     color_blind = "Utiliser une palette adaptée aux daltoniens?",
