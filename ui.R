@@ -1,3 +1,4 @@
+
 ui = fluidPage( 
   title = "FLBEIA Shiny App",
 
@@ -327,6 +328,11 @@ ui = fluidPage(
             uiOutput("mp_ts_btn")
           ),
           accordion_panel(
+            title = om_sett_title,
+            value = "acc_ts_om",
+            uiOutput("show_om_ts")
+          ),
+          accordion_panel(
             title = oth_sett_title,
             value = "acc_ts_oth",
             uiOutput("opts_ts_choices_1"),
@@ -401,6 +407,11 @@ ui = fluidPage(
               NULL
             ),
             uiOutput("mp_kobe_btn")
+          ),
+          accordion_panel(
+            title = om_sett_title,
+            value = "acc_kobe_om",
+            uiOutput("show_om_kobe")
           ),
           accordion_panel(
             title = oth_sett_title,
@@ -487,6 +498,11 @@ ui = fluidPage(
               NULL
             ),
             uiOutput("pi_perf_btn")
+          ),
+          accordion_panel(
+            title = om_sett_title,
+            value = "acc_perf_om",
+            uiOutput("show_om_perf")
           )
         )
       ),
@@ -560,6 +576,11 @@ ui = fluidPage(
             uiOutput("mp_td_btn")
           ),
           accordion_panel(
+            title = om_sett_title,
+            value = "acc_td_om",
+            uiOutput("show_om_td")
+          ),
+          accordion_panel(
             title = oth_sett_title,
             value = "acc_td_oth",
             selectInput("pi_x_td", 
@@ -626,6 +647,11 @@ ui = fluidPage(
               NULL
             ),
             uiOutput("fleet_flt_btn")
+          ),
+          accordion_panel(
+            title = om_sett_title,
+            value = "acc_fleet_om",
+            uiOutput("show_om_flt")
           ),
           accordion_panel(
             title = oth_sett_title,

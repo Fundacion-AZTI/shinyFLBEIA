@@ -3,12 +3,6 @@ server = function(input, output, session) {
   # -------------------------------------------------------------------------
   # Upload MSE outputs:
 
-  # Run locally
-  # if(isTRUE(run_locally)) {
-  #   my_data <- reactive({
-  #     readRDS(file.path("data", paste0(default_MSE, ".flbeia")))
-  #   })
-  # }
   if(isTRUE(run_locally)) {
 
     my_data <- reactiveVal(NULL)
@@ -229,20 +223,28 @@ server = function(input, output, session) {
     accordion_panel_update(
       id = "acc_ts", target = "acc_ts_mp", title = tt("select_mp", lang) )
     accordion_panel_update(
+      id = "acc_ts", target = "acc_ts_om", title = tt("select_om", lang) )
+    accordion_panel_update(
       id = "acc_ts", target = "acc_ts_oth", title = tt("other_settings", lang) )
     # Kobe:
     accordion_panel_update(
       id = "acc_kobe", target = "acc_kobe_mp", title = tt("select_mp", lang) )
+    accordion_panel_update(
+      id = "acc_kobe", target = "acc_kobe_om", title = tt("select_om", lang) )
     accordion_panel_update(
       id = "acc_kobe", target = "acc_kobe_oth", title = tt("other_settings", lang) )
     # Performance:
     accordion_panel_update(
       id = "acc_perf", target = "acc_perf_mp", title = tt("select_mp", lang) )
     accordion_panel_update(
+      id = "acc_perf", target = "acc_perf_om", title = tt("select_om", lang) )
+    accordion_panel_update(
       id = "acc_perf", target = "acc_perf_pi", title = tt("select_pi", lang) )
     # Tradeoff:
     accordion_panel_update(
       id = "acc_td", target = "acc_td_mp", title = tt("select_mp", lang) )
+    accordion_panel_update(
+      id = "acc_td", target = "acc_td_om", title = tt("select_om", lang) )
     accordion_panel_update(
       id = "acc_td", target = "acc_td_oth", title = tt("other_settings", lang) )
     # Fleet:
@@ -252,6 +254,8 @@ server = function(input, output, session) {
       id = "acc_fleet", target = "acc_fleet_flt", title = tt("select_fleet", lang) )
     accordion_panel_update(
       id = "acc_fleet", target = "acc_fleet_mp", title = tt("select_mp", lang) )
+    accordion_panel_update(
+      id = "acc_fleet", target = "acc_fleet_om", title = tt("select_om", lang) )
     accordion_panel_update(
       id = "acc_fleet", target = "acc_fleet_oth", title = tt("other_settings", lang) )
     # Information help button:
@@ -283,13 +287,14 @@ server = function(input, output, session) {
     ts_dat_summ = ts_dat() %>% tidyr::pivot_wider(names_from = "Percentile", values_from = "value")
     ts_dat_summ = ts_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
                                                 MPs = factor(MPs),
+                                                OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
                                                 Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
     ts_dat_summ
   })
   ts_dat_hist = reactive({ 
     ts_dat_hist = ts_dat_summ() %>% 
       dplyr::filter(Years <= my_data()$timeseries$timenow) %>%
-      dplyr::select(-c(MPs)) %>%
+      dplyr::select(-c(MPs, OMs)) %>%
       dplyr::group_by(Stock, Var, Years) %>% summarise_all(mean) # does not matter the function
     ts_dat_hist
   })
@@ -299,13 +304,12 @@ server = function(input, output, session) {
                              Var = my_data()$timeseries$metadata[["en"]]$Code)
     tar_lim_dat = purrr::map_dfr(my_data()$stocks, ~ mutate(tar_lim_dat, group = .x)) %>% 
       rename(Stock = group)
-    tar_lim_dat = tar_lim_dat %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
+    tar_lim_dat = tar_lim_dat %>% dplyr::mutate(Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
     tar_lim_dat
   })
   kobe_dat = reactive({
     kobe_dat = reshape2::melt(my_data()$kobe$value) %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                                    OMs = factor(OMs, levels = 1:nrow(my_data()$om$metadata[["en"]])),
+                                                                    OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
                                                                     MPs = factor(MPs))
     kobe_dat = kobe_dat %>% na.omit
     kobe_dat
@@ -315,7 +319,7 @@ server = function(input, output, session) {
     lst_yr_kobe_dat
   })
   median_lst_kobe_dat = reactive({
-    median_lst_kobe_dat = lst_yr_kobe_dat() %>% group_by(Stock, MPs, Var) %>% 
+    median_lst_kobe_dat = lst_yr_kobe_dat() %>% group_by(Stock, MPs, OMs, Var) %>% 
       summarise(value = median(value), .groups = "drop") %>%
       mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
       select(-Var) %>% pivot_wider(names_from = "ax_type")
@@ -323,7 +327,7 @@ server = function(input, output, session) {
   })
   median_frs_kobe_dat = reactive({
     frs_yr_kobe_dat = kobe_dat() %>% filter(Years == min(Years))
-    median_frs_kobe_dat = frs_yr_kobe_dat %>% group_by(Stock, MPs, Var) %>% 
+    median_frs_kobe_dat = frs_yr_kobe_dat %>% group_by(Stock, MPs, OMs, Var) %>% 
       summarise(value = median(value), .groups = "drop") %>%
       mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
       select(-Var) %>% pivot_wider(names_from = "ax_type")
@@ -331,7 +335,7 @@ server = function(input, output, session) {
   })
   perf_dat = reactive({
     perf_dat = reshape2::melt(my_data()$pi$value) %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                                  OMs = factor(OMs, levels = 1:nrow(my_data()$om$metadata[["en"]])),
+                                                                  OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
                                                                   MPs = factor(MPs))
     perf_dat = perf_dat %>% na.omit 
     perf_dat
@@ -341,6 +345,7 @@ server = function(input, output, session) {
     fleet_dat = fleet_dat %>% na.omit 
     fleet_dat_summ = fleet_dat %>% tidyr::pivot_wider(names_from = "Percentile", values_from = "value")
     fleet_dat_summ = fleet_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
+                                                      OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
                                                       MPs = factor(MPs),
                                                       Fleet = factor(Fleet, levels = my_data()$fleet$metadata[["en"]]$Code),
                                                       Var = factor(Var, levels = my_data()$fleet$variables$Code))
@@ -383,7 +388,7 @@ server = function(input, output, session) {
   # -------------------------------------------------------------------------
   # Tooltips for description of tabs
   n_sim <- reactive({ req(my_data()); my_data()$n_sim })
-  n_om <- reactive({ req(my_data()); nrow(my_data()$om$metadata[["en"]]) })
+  n_om <- reactive({ req(my_data()); nrow(my_data()$om$metadata$factor[["en"]]) })
   # Text:
   std_txt_1 = reactive ({ tt("std_text_1", lang_code()) })
   std_txt_2 = reactive ({ tt("std_text_2", lang_code()) })
@@ -827,6 +832,59 @@ server = function(input, output, session) {
                   selected = my_data()$stocks,
                   multiple = TRUE)
     } 
+  })
+  
+
+  # -------------------------------------------------------------------------
+  # OM selection:
+  output$show_om_ts <- renderUI({
+    radioButtons(
+      inputId = "om_ts",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
+  })
+  
+  output$show_om_kobe <- renderUI({
+    radioButtons(
+      inputId = "om_kobe",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
+  })
+  
+  output$show_om_perf <- renderUI({
+    radioButtons(
+      inputId = "om_perf",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
+  })
+  
+  output$show_om_td <- renderUI({
+    radioButtons(
+      inputId = "om_td",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
+  })
+  
+  output$show_om_flt <- renderUI({
+    radioButtons(
+      inputId = "om_flt",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
   })
   
 
@@ -1380,14 +1438,15 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(input$var_ts_mult, these_stocks, sel_mps_ts())
+    req(input$var_ts_mult, these_stocks, sel_mps_ts(), input$om_ts)
     
     # Filter:
     histdat = ts_dat_hist() %>% 
                   dplyr::filter(Stock %in% these_stocks,
                                 Var %in% input$var_ts_mult) 
     plotdat = ts_dat_summ() %>% dplyr::filter(Stock %in% these_stocks,
-                                              Var %in% input$var_ts_mult, 
+                                              Var %in% input$var_ts_mult,
+                                              OMs == input$om_ts,
                                               Years >= my_data()$timeseries$timenow,
                                               MPs %in% sel_mps_ts())
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
@@ -1493,13 +1552,14 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(input$var_ts_uniq, these_stocks, sel_mps_ts())
+    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts)
     
     histdat = ts_dat_hist() %>% 
       dplyr::filter(Stock %in% these_stocks,
                     Var %in% input$var_ts_uniq) 
     plotdat = ts_dat_summ() %>% dplyr::filter(Stock == these_stocks,
                                             Var == input$var_ts_uniq, 
+                                            OMs == input$om_ts,
                                             Years >= my_data()$timeseries$timenow,
                                             MPs %in% sel_mps_ts())
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
@@ -1594,7 +1654,8 @@ server = function(input, output, session) {
     
     # Avoid error messages if variables are not available:
     req(input$perc_kobe, input$y_range_kobe, 
-        input$x_range_kobe, these_stocks, sel_mps_kobe())
+        input$x_range_kobe, these_stocks, sel_mps_kobe(),
+        input$om_kobe)
     
     # Polygon to make Kobe:
     poly_kobe = data.frame(id = rep(1:4, each = 5), 
@@ -1603,13 +1664,16 @@ server = function(input, output, session) {
     
     # Data to plot:
     lst_yr_dat = lst_yr_kobe_dat() %>% filter(Stock %in% these_stocks,
-                                            MPs %in% sel_mps_kobe())
+                                              OMs == input$om_kobe,
+                                              MPs %in% sel_mps_kobe())
 
     # Get median last year over iter and OMs:
     median_lst_dat = median_lst_kobe_dat() %>% filter(Stock %in% these_stocks,
+                                                      OMs == input$om_kobe,
                                                     MPs %in% sel_mps_kobe()) 
     # Get first year data:
     median_frs_dat = median_frs_kobe_dat() %>% filter(Stock %in% these_stocks,
+                                                      OMs == input$om_kobe,
                                                     MPs %in% sel_mps_kobe()) 
     
     # Get quantiles last year over iter and OMs:
@@ -1623,7 +1687,8 @@ server = function(input, output, session) {
     
     # Temporal trajectory:
     plot_ts_dat = kobe_dat() %>% filter(Stock %in% these_stocks,
-                                      MPs %in% sel_mps_kobe()) %>%
+                                        OMs == input$om_kobe,
+                                        MPs %in% sel_mps_kobe()) %>%
       group_by(Stock, MPs, Var, Years) %>% 
       summarise(value = median(value), .groups = "drop") %>%
       mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
@@ -1709,7 +1774,7 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(these_stocks, sel_mps_kobe())
+    req(these_stocks, sel_mps_kobe(), input$om_kobe) 
     
     # Define colors, make sure you use same colors as previous plot:
     col_pal = c('cat_g' = '#8dd1a8', 'cat_y' = '#fae59b',
@@ -1717,6 +1782,7 @@ server = function(input, output, session) {
 
     # Sort data:
     plot_ts_dat = kobe_dat() %>% filter(Stock == these_stocks,
+                                        OMs == input$om_kobe,
                                       MPs %in% sel_mps_kobe()) %>%
       mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
       select(-Var) %>% pivot_wider(names_from = "ax_type")
@@ -1778,9 +1844,10 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(sel_mps_perf(), sel_pis_perf(), these_stocks)
+    req(sel_mps_perf(), sel_pis_perf(), these_stocks, input$om_perf)
     
     mytab = perf_dat() %>% filter(Stock == these_stocks,
+                                  OMs == input$om_perf,
                                 MPs %in% sel_mps_perf(),
                                 PIs %in% sel_pis_perf()) %>% 
       group_by(MPs, PIs) %>% 
@@ -1850,10 +1917,11 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(sel_mps_perf(), sel_pis_perf(), these_stocks)
+    req(sel_mps_perf(), sel_pis_perf(), these_stocks, input$om_perf)
     
     # Sort data:
     mytab = perf_dat() %>% filter(Stock == these_stocks,
+                                  OMs == input$om_perf,
                                 MPs %in% sel_mps_perf(),
                                 PIs %in% sel_pis_perf()) %>%
       group_by(MPs, PIs) %>% 
@@ -1957,11 +2025,12 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(sel_mps_perf(), sel_pis_perf(), these_stocks)
+    req(sel_mps_perf(), sel_pis_perf(), these_stocks, input$om_perf)
 
     # Sort data:
     mytab = perf_dat() %>% filter(Stock == these_stocks,
                                 MPs %in% sel_mps_perf(),
+                                OMs == input$om_perf,
                                 PIs %in% sel_pis_perf()) 
     mytab_summ = mytab %>%
       group_by(MPs, PIs) %>%
@@ -2028,10 +2097,11 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(sel_mps_td(), these_stocks)
+    req(sel_mps_td(), these_stocks, input$om_td)
     
     # Sort data:
     mytab = perf_dat() %>% filter(Stock %in% these_stocks,
+                                  OMs == input$om_td,
                                  MPs %in% sel_mps_td()) %>% 
       group_by(Stock, MPs, PIs) %>% 
       summarise(value = mean(value), .groups = "drop")
@@ -2086,11 +2156,12 @@ server = function(input, output, session) {
     
     # Avoid error messages if variables are not available:
     req(sel_fleet_flt(), sel_mps_flt(), input$opts_flt, input$central_flt, 
-        input$var_fleet, these_stocks)
+        input$var_fleet, these_stocks, input$om_flt)
     
     # Filter:
     plotdat = fleet_dat_summ() %>% dplyr::filter(Stock %in% these_stocks,
                                                  Var == input$var_fleet,
+                                                 OMs == input$om_flt,
                                                  Fleet %in% sel_fleet_flt(), 
                                                  MPs %in% sel_mps_flt())
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
@@ -2166,7 +2237,7 @@ server = function(input, output, session) {
   })
   # INFORMATION TABLE OM:
   output$info_tab_om <- renderDT({
-    tab <- my_data()$om$metadata[[lang_code()]]
+    tab <- my_data()$om$metadata$factor[[lang_code()]]
     DT::datatable(tab, 
                   options = list(dom = 't', ordering=F, autoWidth = TRUE, pageLength = nrow(tab))) %>%
       formatStyle(columns = 1:ncol(tab), fontSize = "100%") %>%

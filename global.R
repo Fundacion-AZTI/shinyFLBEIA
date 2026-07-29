@@ -28,6 +28,7 @@ library(purrr)
 library(htmltools)
 library(markdown)
 library(tibble)
+options(shiny.maxRequestSize = 50 * 1024^2) # max object size = 50MB
 
 # -------------------------------------------------------------------------
 # Select default MSE or MSE you want to explore
@@ -64,6 +65,7 @@ ts_var_sett_title = ""
 mp_sett_title = ""
 pi_sett_title = ""
 fleet_sett_title = ""
+om_sett_title = ""
 oth_sett_title = ""
 
 # AZTI Color:

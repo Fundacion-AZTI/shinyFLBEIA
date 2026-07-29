@@ -17,6 +17,7 @@ i18n_translations <- list(
     # SIDEBAR sections:
     about_chart = "About This Chart", 
     select_stock = "Select Stock(s)",
+    select_om = "Select Operating Model",
     select_variable = "Select Variable(s)",
     select_mp = "Select Management Procedure(s)",
     select_pi = "Select Performance Indicators(s)",
@@ -114,6 +115,7 @@ i18n_translations <- list(
     # SIDEBAR sections:
     about_chart = "Acerca de este gráfico",
     select_stock = "Seleccionar Stock(s)",
+    select_om = "Seleccionar Modelo Operativo",
     select_variable = "Seleccionar Variable(s)",
     select_mp = "Seleccionar Procedimiento de Manejo(s)",
     select_pi = "Seleccionar Indicador(es) de Desempeño",
@@ -211,6 +213,7 @@ i18n_translations <- list(
     # SIDEBAR sections:
     about_chart = "À propos de ce graphique",
     select_stock = "Sélectionner le(s) stock(s)",
+    select_om = "Sélectionner modèle opérationnel",
     select_variable = "Sélectionner variable(s)",
     select_mp = "Sélectionner procédure(s) de gestion",
     select_pi = "Sélectionner indicateurs de performance",
