@@ -284,7 +284,13 @@ server = function(input, output, session) {
     ts_dat
   })
   ts_dat_summ = reactive({
-    ts_dat_summ = ts_dat() %>% tidyr::pivot_wider(names_from = "Percentile", values_from = "value")
+    ts_dat_summ = ts_dat() %>% dplyr::group_by(Stock, OMs, MPs, Var, Years) %>%
+      dplyr::summarise(q10 = quantile(value, probs = 0.05),
+                       q25 = quantile(value, probs = 0.25),
+                       q50 = quantile(value, probs = 0.5),
+                       q75 = quantile(value, probs = 0.75),
+                       q90 = quantile(value, probs = 0.95),
+                       avg = mean(value), .groups = "drop")
     ts_dat_summ = ts_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
                                                 MPs = factor(MPs),
                                                 OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
@@ -609,6 +615,62 @@ server = function(input, output, session) {
              units = dwn_units)
     }
   )
+  
+  # Download button TS OM:
+  observeEvent(input$open_dwn_ts_om, {
+    showModal(
+      modalDialog(
+        title = dwn_sett_1(),
+        textInput("name_ts_om", dwn_sett_2(), value = "fig_ts_om"),
+        numericInput("width_ts_om", dwn_sett_3(), value = dwn_width, min = 1),
+        numericInput("height_ts_om", dwn_sett_4(), value = dwn_height, min = 1),
+        numericInput("dpi_ts_om", dwn_sett_5(), value = dwn_res, min = 72),
+        footer = tagList(
+          modalButton(dwn_sett_6()),
+          downloadButton("dwn_plot_ts_om", dwn_sett_7())
+        )
+      )
+    )
+  })
+  # Download handler
+  output$dwn_plot_ts_om <- downloadHandler(
+    filename = function() { paste0(input$name_ts_om, ".png") },
+    content = function(file) {
+      ggsave(file, plot = my_ts_plot_var_om(), 
+             width = input$width_ts_om, 
+             height = input$height_ts_om, 
+             dpi = input$dpi_ts_om,
+             units = dwn_units)
+    }
+  )
+  
+  # Download button TS OM_i:
+  observeEvent(input$open_dwn_ts_om_i, {
+    showModal(
+      modalDialog(
+        title = dwn_sett_1(),
+        textInput("name_ts_om_i", dwn_sett_2(), value = "fig_ts_om_i"),
+        numericInput("width_ts_om_i", dwn_sett_3(), value = dwn_width, min = 1),
+        numericInput("height_ts_om_i", dwn_sett_4(), value = dwn_height, min = 1),
+        numericInput("dpi_ts_om_i", dwn_sett_5(), value = dwn_res, min = 72),
+        footer = tagList(
+          modalButton(dwn_sett_6()),
+          downloadButton("dwn_plot_ts_om_i", dwn_sett_7())
+        )
+      )
+    )
+  })
+  # Download handler
+  output$dwn_plot_ts_om_i <- downloadHandler(
+    filename = function() { paste0(input$name_ts_om_i, ".png") },
+    content = function(file) {
+      ggsave(file, plot = my_ts_plot_var_om_i(), 
+             width = input$width_ts_om_i, 
+             height = input$height_ts_om_i, 
+             dpi = input$dpi_ts_om_i,
+             units = dwn_units)
+    }
+  )
 
   # Download button KOBE Overall:
   observeEvent(input$open_dwn_kobe_ov, {
@@ -837,12 +899,22 @@ server = function(input, output, session) {
 
   # -------------------------------------------------------------------------
   # OM selection:
-  output$show_om_ts <- renderUI({
+  output$show_om_ts_uniq <- renderUI({
     radioButtons(
-      inputId = "om_ts",
+      inputId = "om_ts_uniq",
       label = NULL,
       choices = my_data()$om$metadata$factor[["en"]]$Factor,
       selected = my_data()$om$metadata$factor[["en"]]$Factor[1],
+      inline = TRUE
+    )
+  })
+  
+  output$show_om_ts_mult <- renderUI({
+    checkboxGroupInput(
+      inputId = "om_ts_mult",
+      label = NULL,
+      choices = my_data()$om$metadata$factor[["en"]]$Factor,
+      selected = my_data()$om$metadata$factor[["en"]]$Factor,
       inline = TRUE
     )
   })
@@ -911,6 +983,9 @@ server = function(input, output, session) {
   })
   output$opts_ts_choices_3 <- renderUI({
     checkboxInput(inputId = "by_mp", label = oth_setts_ts_3())
+  })
+  output$opts_ts_choices_4 <- renderUI({
+    checkboxInput(inputId = "by_iter", label = oth_setts_ts_4())
   })
   # Kobe:
   output$opts_kobe_choices_1 <- renderUI({
@@ -1304,6 +1379,18 @@ server = function(input, output, session) {
   
   # -------------------------------------------------------------------------
   # Update dynamic objects in checkbox or selectinput
+  observe({
+    req(my_data())
+    n_sim <- my_data()$n_sim
+    lvl   <- my_data()$om$metadata$level[["en"]]
+    req(n_sim, lvl)
+    updateSelectInput(
+      session,
+      "i_sel",
+      choices = seq_len(n_sim * nrow(lvl)),
+      selected = 1
+    )
+  })
   
   # Performance PI checkbox:
   observe({
@@ -1427,7 +1514,7 @@ server = function(input, output, session) {
   })
 
   # -------------------------------------------------------------------------
-  # TIME SERIES PLOT
+  # TIME SERIES PLOT (OVERALL)
   my_ts_plot_var <- reactive({
     
     # Select stocks:
@@ -1438,7 +1525,7 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(input$var_ts_mult, these_stocks, sel_mps_ts(), input$om_ts)
+    req(input$var_ts_mult, these_stocks, sel_mps_ts(), input$om_ts_uniq)
     
     # Filter:
     histdat = ts_dat_hist() %>% 
@@ -1446,7 +1533,7 @@ server = function(input, output, session) {
                                 Var %in% input$var_ts_mult) 
     plotdat = ts_dat_summ() %>% dplyr::filter(Stock %in% these_stocks,
                                               Var %in% input$var_ts_mult,
-                                              OMs == input$om_ts,
+                                              OMs == input$om_ts_uniq,
                                               Years >= my_data()$timeseries$timenow,
                                               MPs %in% sel_mps_ts())
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
@@ -1541,6 +1628,8 @@ server = function(input, output, session) {
   # Now render it:
   output$ts_plot_var <- renderPlot({ my_ts_plot_var() })
   
+
+  # -------------------------------------------------------------------------
   # TIME SERIES PLOT (BY MP)
   my_ts_plot_var_mp <- reactive({
     
@@ -1552,14 +1641,14 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts)
+    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_uniq)
     
     histdat = ts_dat_hist() %>% 
       dplyr::filter(Stock %in% these_stocks,
                     Var %in% input$var_ts_uniq) 
     plotdat = ts_dat_summ() %>% dplyr::filter(Stock == these_stocks,
                                             Var == input$var_ts_uniq, 
-                                            OMs == input$om_ts,
+                                            OMs == input$om_ts_uniq,
                                             Years >= my_data()$timeseries$timenow,
                                             MPs %in% sel_mps_ts())
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
@@ -1640,6 +1729,217 @@ server = function(input, output, session) {
   })
   # Now render it:
   output$ts_plot_var_mp <- renderPlot({ my_ts_plot_var_mp() })
+  
+
+  # -------------------------------------------------------------------------
+  # TIME SERIES PLOT (BY OM)
+  my_ts_plot_var_om <- reactive({
+    
+    # Select stocks:
+    if(my_data()$n_stocks > 1) {
+      these_stocks = input$stock_ts_uniq
+    } else {
+      these_stocks = my_data()$stocks
+    }
+    
+    # Avoid error messages if variables are not available:
+    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_mult)
+    
+    histdat = ts_dat_hist() %>% 
+      dplyr::filter(Stock %in% these_stocks,
+                    Var %in% input$var_ts_uniq)
+    plotdat = ts_dat_summ() %>% dplyr::filter(Stock == these_stocks,
+                                              OMs %in% input$om_ts_mult,
+                                              Var == input$var_ts_uniq, 
+                                              Years >= my_data()$timeseries$timenow,
+                                              MPs %in% sel_mps_ts())
+    labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
+    
+    # Save x position for target and limit labels :
+    min_x_lab = min(histdat$Years)
+    
+    # Start plot:
+    p1 = ggplot(plotdat, aes(x = Years))
+    
+    # Add axes limits:
+    p1 = p1 +
+      scale_color_manual(values = my_col_vec()) +
+      scale_fill_manual(values = my_col_vec()) +
+      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab) +
+      theme(legend.position = "none",
+            axis.title.x = element_text(size = axs_lbl_sz),
+            axis.title.y = element_text(size = axs_lbl_sz),
+            axis.text = element_text(size = axs_sz),
+            axis.text.y = element_text(angle = 90, hjust = 0.5),
+            strip.text = element_text(size = fct_ttl_sz, face = "bold"),
+            strip.background = element_blank()) +
+      scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
+                         guide = guide_axis(check.overlap = TRUE))
+    
+    if("inc_perc" %in% input$opts) {
+      p1 = p1 + 
+        geom_ribbon(data = plotdat, aes(ymin = q10, ymax = q90, fill = MPs), alpha = 0.1) +
+        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) +
+        geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
+        geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
+        geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+    }
+    
+    # Central line:
+    if(input$central == "mean") {
+      p1 = p1 +
+        geom_line(aes(y = avg, color = MPs)) +
+        geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+    }
+    if(input$central == "median") {
+      p1 = p1 +
+        geom_line(aes(y = q50, color = MPs)) +
+        geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+    }
+    
+    if("inc_mp_lab" %in% input$opts & !input$by_mp) {
+      p1 = p1 + 
+        geom_text_repel(data = labdat, aes(x = Years, y = q50, label = MPs, color = MPs),
+                        nudge_x = 4, direction = "y", hjust = "left",
+                        size = rpl_sz, segment.linetype = 6)
+    }
+    
+    if(!("inc_hist" %in% input$opts)) {
+      p1 = p1 + 
+        scale_x_continuous(limits = c(my_data()$timeseries$timenow, NA))
+      min_x_lab = my_data()$timeseries$timenow
+    }
+    
+    # Add Limit and Target labels:
+    p1 = p1 + 
+      geom_hline(yintercept = my_data()$timeseries$target[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)], 
+                 color = "#000000", linetype = "dashed", na.rm = TRUE) +
+      geom_hline(yintercept = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)], 
+                 color = "#000000", linetype = "dashed", na.rm = TRUE) +
+      annotate("text", label = "Target", size = 5, color = "#000000", na.rm = TRUE, hjust = 0,
+               x = min_x_lab, 
+               y = my_data()$timeseries$target[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) +
+      annotate("text", label = "Limit", size = 5, color = "#000000", na.rm = TRUE, hjust = 0,
+               x = min_x_lab, 
+               y = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) 
+    
+    # Coordinates:
+    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA)) 
+    
+    # Add Stock label only if n_stocks > 1
+    if(my_data()$n_stocks > 1) {
+      p1 = p1 + ggtitle(label = these_stocks)
+    }
+    
+    # Add facets and print plot:
+    if(!input$by_mp) {
+      p1 = p1 + facet_wrap(~ OMs)
+    } else {
+      p1 = p1 + facet_grid(MPs ~ OMs)
+    }
+    
+    print(p1)
+    
+  })
+  # Now render it:
+  output$ts_plot_var_om <- renderPlot({ my_ts_plot_var_om() })
+  
+
+  # -------------------------------------------------------------------------
+  # TIME SERIES PLOT (BY OM and ITER)
+  my_ts_plot_var_om_i <- reactive({
+    
+    # Select stocks:
+    if(my_data()$n_stocks > 1) {
+      these_stocks = input$stock_ts_uniq
+    } else {
+      these_stocks = my_data()$stocks
+    }
+    
+    # Avoid error messages if variables are not available:
+    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_mult)
+    
+    histdat = ts_dat() %>% 
+      dplyr::filter(Stock == these_stocks,
+                    OMs %in% input$om_ts_mult,
+                    Years <= my_data()$timeseries$timenow,
+                    Var == input$var_ts_uniq,
+                    MPs %in% sel_mps_ts(),
+                    Iter == input$i_sel)
+    plotdat = ts_dat() %>% dplyr::filter(Stock == these_stocks,
+                                         OMs %in% input$om_ts_mult,
+                                         Var == input$var_ts_uniq, 
+                                         Years >= my_data()$timeseries$timenow,
+                                         MPs %in% sel_mps_ts(),
+                                         Iter == input$i_sel)
+    labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
+    
+    # Save x position for target and limit labels :
+    min_x_lab = min(histdat$Years)
+    
+    # Start plot:
+    p1 = ggplot(plotdat, aes(x = Years))
+    
+    # Add axes limits:
+    p1 = p1 +
+      scale_color_manual(values = my_col_vec()) +
+      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab) +
+      theme(legend.position = "none",
+            axis.title.x = element_text(size = axs_lbl_sz),
+            axis.title.y = element_text(size = axs_lbl_sz),
+            axis.text = element_text(size = axs_sz),
+            axis.text.y = element_text(angle = 90, hjust = 0.5),
+            strip.text = element_text(size = fct_ttl_sz, face = "bold"),
+            strip.background = element_blank()) +
+      scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
+                         guide = guide_axis(check.overlap = TRUE))
+    
+    # Line:
+    p1 = p1 +
+      geom_line(aes(y = value, color = MPs)) +
+      geom_line(data = histdat, aes(x = Years, y = value), color = "gray80") 
+    
+    if("inc_mp_lab" %in% input$opts & !input$by_mp) {
+      p1 = p1 + 
+        geom_text_repel(data = labdat, aes(x = Years, y = value, label = MPs, color = MPs),
+                        nudge_x = 4, direction = "y", hjust = "left",
+                        size = rpl_sz, segment.linetype = 6)
+    }
+    
+    if(!("inc_hist" %in% input$opts)) {
+      p1 = p1 + 
+        scale_x_continuous(limits = c(my_data()$timeseries$timenow, NA))
+      min_x_lab = my_data()$timeseries$timenow
+    }
+    
+    # Add Limit and Target labels:
+    p1 = p1 + 
+      geom_hline(yintercept = my_data()$timeseries$target[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)], 
+                 color = "#000000", linetype = "dashed", na.rm = TRUE) +
+      geom_hline(yintercept = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)], 
+                 color = "#000000", linetype = "dashed", na.rm = TRUE) +
+      annotate("text", label = "Target", size = 5, color = "#000000", na.rm = TRUE, hjust = 0,
+               x = min_x_lab, 
+               y = my_data()$timeseries$target[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) +
+      annotate("text", label = "Limit", size = 5, color = "#000000", na.rm = TRUE, hjust = 0,
+               x = min_x_lab, 
+               y = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) 
+    
+    # Coordinates:
+    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA)) 
+    
+    # Add facets and print plot:
+    if(!input$by_mp) {
+      p1 = p1 + facet_wrap(~ OMs)
+    } else {
+      p1 = p1 + facet_grid(MPs ~ OMs)
+    }
+    
+    print(p1)
+    
+  })
+  # Now render it:
+  output$ts_plot_var_om_i <- renderPlot({ my_ts_plot_var_om_i() })
   
   # -------------------------------------------------------------------------
   # KOBE PLOT (OVERALL)

@@ -330,7 +330,14 @@ ui = fluidPage(
           accordion_panel(
             title = om_sett_title,
             value = "acc_ts_om",
-            uiOutput("show_om_ts")
+            conditionalPanel(
+              condition = "input.ts_tab == 'by_om'", 
+              uiOutput("show_om_ts_mult")
+            ),
+            conditionalPanel(
+              condition = "input.ts_tab != 'by_om'", 
+              uiOutput("show_om_ts_uniq")
+            )
           ),
           accordion_panel(
             title = oth_sett_title,
@@ -368,6 +375,46 @@ ui = fluidPage(
             actionButton(inputId = "open_dwn_ts_mp", label = "",
                          icon = icon("download", style = "color: #FFFFFF;"),
                          class = "btn-dwn")
+        ),
+        nav_panel(
+          title = textOutput("nav_ts_om_title", inline = TRUE),
+          value = "by_om",
+          page_fillable(
+            layout_columns(
+              fill = FALSE,
+              uiOutput("opts_ts_choices_3"),
+              uiOutput("opts_ts_choices_4"),
+              conditionalPanel(
+                condition = "input.by_iter == 1", 
+                selectInput("i_sel", 
+                            NULL,
+                            choices = NULL,
+                            width = "75px")
+              )
+            ),
+            conditionalPanel(
+              condition = "input.by_iter == 1",
+              shinycssloaders::withSpinner(
+                plotOutput("ts_plot_var_om_i", height = plot_height),
+                type = load_img_type,
+                color = azti_col
+              ),
+              actionButton(inputId = "open_dwn_ts_om_i", label = "",
+                           icon = icon("download", style = "color: #FFFFFF;"),
+                           class = "btn-dwn")
+            ),
+            conditionalPanel(
+              condition = "input.by_iter == 0", 
+              shinycssloaders::withSpinner(
+                plotOutput("ts_plot_var_om", height = plot_height),
+                type = load_img_type,
+                color = azti_col
+              ),
+              actionButton(inputId = "open_dwn_ts_om", label = "",
+                           icon = icon("download", style = "color: #FFFFFF;"),
+                           class = "btn-dwn")
+            )
+          )
         )
       )
     )

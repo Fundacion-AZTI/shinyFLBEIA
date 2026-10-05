@@ -27,23 +27,23 @@ MP_process = function(myoutput) {
 
 TS_process = function(myoutput) {
 
-  # Define dimensions:
-  nST = myoutput$n_stocks
-  nOM <- nrow(myoutput$om$metadata$factor) # number of Factor OMs
-  nMP <- length(myoutput$mp$metadata$Code) # number of MPs
-  nVAR <- length(myoutput$timeseries$metadata$Code) # number of variables
-  nYR <- length(myoutput$timeseries$time) # number of years
-  
-  # Information for 6 percentiles: 5%,25%,50%,75%,95% and mean
-  # DO NOT CHANGE PERCENTILE NAMES
-  myoutput$timeseries$value <- array(NA, dim=c(nST, 6, nOM, nMP, nVAR, nYR), 
-                                     dimnames = list(Stock = myoutput$stocks,
-                                                     Percentile = c("q10", "q25", "q50", "q75", "q90", "avg"),
-													 OMs = myoutput$om$metadata$factor$Factor,
-                                                     MPs = myoutput$mp$metadata$Code,
-                                                     Var = myoutput$timeseries$metadata$Code,
-                                                     Years = myoutput$timeseries$time))
-  
+	# Define dimensions:
+	nST = myoutput$n_stocks
+	nIter = myoutput$n_sim * nrow(myoutput$om$metadata$level)
+	nOM <- nrow(myoutput$om$metadata$factor) # number of Factor OMs
+	nMP <- length(myoutput$mp$metadata$Code) # number of MPs
+	nVAR <- length(myoutput$timeseries$metadata$Code) # number of variables
+	nYR <- length(myoutput$timeseries$time) # number of years
+
+	# DO NOT CHANGE PERCENTILE NAMES
+	myoutput$timeseries$value <- array(NA, dim=c(nST, nIter, nOM, nMP, nVAR, nYR), 
+									   dimnames = list(Stock = myoutput$stocks,
+													   Iter = 1:nIter,
+													   OMs = myoutput$om$metadata$factor$Factor,
+													   MPs = myoutput$mp$metadata$Code,
+													   Var = myoutput$timeseries$metadata$Code,
+													   Years = myoutput$timeseries$time))
+
 	# Fill in TS matrix:
 	for(v in 1:nVAR) {
 	  for(i in 1:nMP) {
@@ -56,17 +56,12 @@ TS_process = function(myoutput) {
 			  rename(value = sel_var[v]) %>% # select variable here
 			  select(year, iter, value) %>% 
 			  left_join(om_iter, by = "iter")
-			tmp3 = matrix(NA, nrow = 6, ncol = nYR)
+			tmp3 = matrix(NA, nrow = nIter, ncol = nYR)
 			if(nrow(tmp) > 0) { # Fill when values are available
-			  tmp2 = tmp %>% group_by(year) %>% summarise(q10 = quantile(value, probs = 0.05, na.rm = TRUE),
-														  q25 = quantile(value, probs = 0.25, na.rm = TRUE),
-														  q50 = quantile(value, probs = 0.5, na.rm = TRUE),
-														  q75 = quantile(value, probs = 0.75, na.rm = TRUE),
-														  q90 = quantile(value, probs = 0.95, na.rm = TRUE),
-														  avg = mean(value, na.rm = TRUE), .groups = "drop")
-			  tmp2 = tmp2 %>% column_to_rownames(var = "year") %>% as.matrix %>% t
-			  # To save results, Do this because somethings some iters are missing:
-			  tmp3[, match(as.numeric(colnames(tmp2)), myoutput$timeseries$time)] = tmp2
+			  tmp2 = tmp %>% 
+				pivot_wider(names_from = "year", id_cols = "iter") %>%
+				column_to_rownames(var = "iter") %>% as.matrix
+			  tmp3[as.numeric(rownames(tmp2)), match(as.numeric(colnames(tmp2)), myoutput$timeseries$time)] = tmp2
 			}
 			# Save
 			myoutput$timeseries$value[s,,k,i,v,] = tmp3
@@ -74,10 +69,10 @@ TS_process = function(myoutput) {
 		} # STOCK
 	  } # MP
 	} # VAR
-  
-  # Target and limit if present (length = number of variables):
-  myoutput$timeseries$target <- rep(NA, times = nVAR)
-  myoutput$timeseries$limit <- rep(NA, times = nVAR)
+
+	# Target and limit if present (length = number of variables):
+	myoutput$timeseries$target <- rep(NA, times = nVAR)
+	myoutput$timeseries$limit <- rep(NA, times = nVAR)
   
   # Output:
   return(myoutput)

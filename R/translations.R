@@ -32,7 +32,7 @@ i18n_translations <- list(
     std_text_5 = " on the top-right side of this site.", # standard text for all navs
     help_ts_1 = "This chart shows changes in a selected variable over time. Two periods are differentiated: historical (gray) and projection (colored). Colors represent different MPs. The continuous line represents the median or mean",
     help_ts_2 = "Uncertainty is shown as shadow: darker and lighter areas contain 50% and 90% of values, respectively. Note that, for the historical period, the 90% of values are shown as dashed lines.",
-    help_ts_3 = "We can also display these quantities in different panels by MP (see tabs).",
+    help_ts_3 = "We can also display these quantities in different panels by MP and OM (see tabs).",
     help_ts_4 = "variables, MPs, and OMs, see ",
     help_kobe_1 = "A Kobe plot is a visual way to show the status of a stock, which is commonly categorized into four colored quadrants.
          This categorization depends on fishing mortality and biomass relative to reference points (e.g., maximum sustainable yield).
@@ -130,7 +130,7 @@ i18n_translations <- list(
     std_text_5 = " en la esquina superior derecha de este sitio.", # standard text for all navs
     help_ts_1 = "Estos gráficos muestran cambios temporales en una variable selectionada. Dos periodos son diferenciados: histórico (gris) y proyección (coloreado). Colores representan diferentes MPs. La línea continua representa la media o mediana",
     help_ts_2 = "Incertidumbre es representada como sombras: áreas más oscuras y más claras contienen el 50% y 90% de valores, respectivamente. Notar que, para el periodo histórico, el 90% de valores es mostrado como líneas punteadas.",
-    help_ts_3 = "También podemos mostrar estos valores en paneles por MP (ver pestañas).",
+    help_ts_3 = "También podemos mostrar estos valores en paneles por MP y OM (ver pestañas).",
     help_ts_4 = "variables, MPs, y OMs, ver ",
     help_kobe_1 = "Un gráfico de Kobe es una forma visual de representar el estado de un stock, el cual puede ser categorizado en cuatro cuadrantes coloreados. 
     Esta categorización depende de valores de mortalidad por pesca y biomasa relativos a puntos de referencia (p.ej., máximo rendimiento sostenible).
@@ -228,7 +228,7 @@ i18n_translations <- list(
     std_text_5 = " en haut à droite de ce site.", # standard text for all navs
     help_ts_1 = "Ce graphique illustre l'évolution d'une variable donnée au fil du temps. On distingue deux périodes : la période historique (en gris) et la période de projection (en couleur). Les couleurs représentent différents députés. La ligne continue correspond à la médiane ou à la moyenne",
     help_ts_2 = "L'incertitude est représentée par des nuances d'ombre: les zones plus sombres et plus claires correspondent respectivement à 50 % et 90 % des valeurs. Notez que, pour la période historique, les 90 % des valeurs sont représentés par des lignes pointillées.",
-    help_ts_3 = "Nous pouvons également afficher ces quantités dans différents panneaux par MP (voir les onglets).",
+    help_ts_3 = "Nous pouvons également afficher ces quantités dans différents panneaux par MP et OM (voir les onglets).",
     help_ts_4 = "variables, MPs, et OMs, voir ",
     help_kobe_1 = "Un graphique de Kobe est un outil visuel permettant de représenter l'état d'un stock, généralement classé en quatre quadrants colorés.
          Cette classification dépend de la mortalité par pêche et de la biomasse par rapport à des points de référence (par exemple, le rendement maximal durable).
