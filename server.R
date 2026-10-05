@@ -348,8 +348,7 @@ server = function(input, output, session) {
   })
   fleet_dat_summ = reactive({
     fleet_dat = reshape2::melt(my_data()$fleet$value)
-    fleet_dat = fleet_dat %>% na.omit 
-    fleet_dat_summ = fleet_dat %>% tidyr::pivot_wider(names_from = "Percentile", values_from = "value")
+    fleet_dat_summ = fleet_dat %>% na.omit 
     fleet_dat_summ = fleet_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
                                                       OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
                                                       MPs = factor(MPs),
@@ -431,9 +430,8 @@ server = function(input, output, session) {
       tagList( 
         ts_txt_1(),
         std_txt_1(), # Standard text
-        n_sim(),
-        std_txt_2(), # Standard text
-        n_om(),
+        n_sim() * n_om(),
+        # std_txt_2(), # Standard text
         std_txt_3(), # Standard text
         br(),
         ts_txt_2(),
@@ -458,9 +456,8 @@ server = function(input, output, session) {
       tagList(
         kobe_txt_1(),
         std_txt_1(), # Standard text
-        n_sim(),
-        std_txt_2(), # Standard text
-        n_om(),
+        n_sim() * n_om(),
+        # std_txt_2(), # Standard text
         std_txt_3(), # Standard text
         br(),
         br(),
@@ -487,9 +484,8 @@ server = function(input, output, session) {
       tagList( 
         perf_txt_1(),
         std_txt_1(), # Standard text
-        n_sim(),
-        std_txt_2(), # Standard text
-        n_om(),
+        n_sim() * n_om(),
+        # std_txt_2(), # Standard text
         std_txt_3(), # Standard text
         br(),
         br(),
@@ -516,9 +512,8 @@ server = function(input, output, session) {
       icon("circle-question", style = "color: #FCDA01;"),
       tagList( 
         td_txt_1(), # Standard text
-        n_sim(),
-        std_txt_2(), # Standard text
-        n_om(),
+        n_sim() * n_om(),
+        # std_txt_2(), # Standard text
         std_txt_3(), # Standard text
         br(),
         br(),
@@ -537,14 +532,13 @@ server = function(input, output, session) {
       icon("circle-question", style = "color: #FCDA01;"),
       tagList( 
         fleet_txt_1(), # Standard text
-        n_sim(),
-        std_txt_2(), # Standard text
-        n_om(),
-        std_txt_3(), # Standard text
-        br(),
-        fleet_txt_2(),
-        br(),
-        tags$img(src = "ts.png", height = "150px"),
+        # n_sim() * n_om(),
+        # std_txt_2(), # Standard text
+        # std_txt_3(), # Standard text
+        # br(),
+        # fleet_txt_2(),
+        # br(),
+        # tags$img(src = "ts.png", height = "150px"),
         br(),
         br(),
         std_txt_4(), # Standard text
@@ -2351,12 +2345,12 @@ server = function(input, output, session) {
     }
       
     p1 = p1 +  
-      geom_pointrange(data = mytab_summ, aes(y = med, ymin = q1min, ymax = q1max, color = MPs)) +
-      geom_pointrange(data = mytab_summ, aes(y = med, ymin = q2min, ymax = q2max, color = MPs), linewidth = 1.75) +
-      geom_point(data = mytab_summ, aes(y = med, color = MPs), size = 2.5) +
-      # geom_violin() +
-      # scale_fill_manual(values = my_col_vec()) +
-      scale_color_manual(values = my_col_vec()) +
+      #geom_pointrange(data = mytab_summ, aes(y = med, ymin = q1min, ymax = q1max, color = MPs)) +
+      #geom_pointrange(data = mytab_summ, aes(y = med, ymin = q2min, ymax = q2max, color = MPs), linewidth = 1.75) +
+      #geom_point(data = mytab_summ, aes(y = med, color = MPs), size = 2.5) +
+      #scale_color_manual(values = my_col_vec()) +
+      geom_violin(aes(fill = MPs), alpha = 0.75, adjust = 0.75) +
+      scale_fill_manual(values = my_col_vec()) +
       ylab(NULL) + xlab(NULL) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
                          guide = guide_axis(check.overlap = TRUE)) +
@@ -2464,52 +2458,29 @@ server = function(input, output, session) {
                                                  OMs == input$om_flt,
                                                  Fleet %in% sel_fleet_flt(), 
                                                  MPs %in% sel_mps_flt())
-    labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
-    
+
     # Start plot:
-    p1 = ggplot(plotdat, aes(x = Years))
+    p1 = ggplot(plotdat, aes(x = MPs, y = value, fill = MPs)) +
+      geom_col()
     
     # Add axes limits:
     p1 = p1 +
-      scale_color_manual(values = my_col_vec()) +
       scale_fill_manual(values = my_col_vec()) +
-      ylab(input$var_fleet) + xlab(my_data()$timeseries$timelab) +
+      ylab(input$var_fleet) + xlab(NULL) +
       theme(legend.position = "none",
             axis.title.x = element_text(size = axs_lbl_sz),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
             axis.title.y = element_text(size = axs_lbl_sz),
-            axis.text = element_text(size = axs_sz),
             axis.text.y = element_text(angle = 90, hjust = 0.5),
+            axis.text = element_text(size = axs_sz),
             strip.text = element_text(size = fct_ttl_sz, face = "bold"),
             strip.placement = "outside",
             strip.background = element_blank()) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
                          guide = guide_axis(check.overlap = TRUE))
     
-    if("inc_perc" %in% input$opts_flt) {
-      p1 = p1 + 
-        geom_ribbon(data = plotdat, aes(ymin = q10, ymax = q90, fill = MPs), alpha = 0.1) +
-        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) 
-    }
-    
-    # Central line:
-    if(input$central_flt == "mean") {
-      p1 = p1 +
-        geom_line(aes(y = avg, color = MPs)) 
-    }
-    if(input$central_flt == "median") {
-      p1 = p1 +
-        geom_line(aes(y = q50, color = MPs))
-    }
-    
-    if("inc_mp_lab" %in% input$opts_flt) {
-      p1 = p1 + 
-        geom_text_repel(data = labdat, aes(x = Years, y = q50, label = MPs, color = MPs),
-                        nudge_x = 4, direction = "y", hjust = "left",
-                        size = rpl_sz, segment.linetype = 6)
-    }
-    
     # Coordinates:
-    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA))
+    p1 = p1 + coord_cartesian(expand = c(1, 1, 0, 1), ylim = c(0, NA))
     
     # Make panels:
     if(length(these_stocks) > 1) {

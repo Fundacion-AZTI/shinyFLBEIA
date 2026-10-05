@@ -753,59 +753,45 @@ FLEET_process = function(myoutput) {
   
   # Define dimensions:
   nFL <- nrow(myoutput$fleet$metadata) 
-  nYR <- length(myoutput$fleet$time) # number of years
   nST = myoutput$n_stocks
   nMP <- length(myoutput$mp$metadata$Code) # number of MPs
   nVAR <- length(myoutput$fleet$variables$Code)
   nOM <- nrow(myoutput$om$metadata$factor) # number of Factor OMs
-
-  myoutput$fleet$value <- array(NA, dim=c(nST, nVAR, 6, nOM, nMP, nFL, nYR),
+  
+  myoutput$fleet$value <- array(NA, dim=c(nST, nVAR, nOM, nMP, nFL),
                                 dimnames = list(Stock = myoutput$stocks,
                                                 Var = myoutput$fleet$variables$Code,
-                                                Percentile = c("q10", "q25", "q50", "q75", "q90", "avg"),
-												OMs = myoutput$om$metadata$factor$Factor,
+                                                OMs = myoutput$om$metadata$factor$Factor,
                                                 MPs = myoutput$mp$metadata$Code,
-                                                Fleet = myoutput$fleet$metadata$Code,
-                                                Years = myoutput$fleet$time))
+                                                Fleet = myoutput$fleet$metadata$Code))
   
-	# Fill in FLEET matrix:
-	for(v in 1:nVAR) {
-	  for(f in 1:nFL) {
-		for(i in 1:nMP) {
-		  for(s in 1:nST) {
-			for(k in 1:nOM) {
-			
-			  tmp = catch_merged %>% ungroup %>% 
-				filter(stock == myoutput$stocks[s],
-					   fleet == myoutput$fleet$metadata$Code[f],
-					   MP == myoutput$mp$metadata$Code[i],
-					   OM == myoutput$om$metadata$factor$Factor[k],
-					   year %in% myoutput$fleet$time ) %>%
-				rename(value = sel_var[v]) %>% # select variable here
-				select(year, iter, value) %>% 
-				left_join(om_iter, by = "iter")
-			  # To save results, Do this because somethings some iters are missing:
-			  tmp3 = matrix(NA, nrow = 6, ncol = nYR)
-			  if(nrow(tmp) > 0) {
-				tmp2 = tmp %>% group_by(year) %>% summarise(q10 = quantile(value, probs = 0.05, na.rm = TRUE),
-															q25 = quantile(value, probs = 0.25, na.rm = TRUE),
-															q50 = quantile(value, probs = 0.5, na.rm = TRUE),
-															q75 = quantile(value, probs = 0.75, na.rm = TRUE),
-															q90 = quantile(value, probs = 0.95, na.rm = TRUE),
-															avg = mean(value, na.rm = TRUE), .groups = "drop")
-				tmp2 = tmp2 %>% column_to_rownames(var = "year") %>% as.matrix %>% t
-				#now check if nrow > 0 since some fleets may be absent for some stocks:
-				if(nrow(tmp2) > 0) {
-				  tmp3[, match(as.numeric(colnames(tmp2)), myoutput$fleet$time)] = tmp2
-				}
-			  }
-			  # Save
-			  myoutput$fleet$value[s,v,,k,i,f,] = tmp3
-			} # OM
-		  } # STOCK
-		} # MP
-	  } # FLEET
-	} # VAR
+  # Fill in FLEET matrix:
+  for(v in 1:nVAR) {
+    for(i in 1:nMP) {
+      for(s in 1:nST) {
+        for(k in 1:nOM) {
+          tmp = catch_merged %>% ungroup %>% 
+            filter(stock == myoutput$stocks[s],
+                   MP == myoutput$mp$metadata$Code[i],
+                   OM == myoutput$om$metadata$factor$Factor[k],
+                   year >= (sim_yr_str+15) & year < (sim_yr_str+30)
+            ) %>%
+            rename(value = sel_var[v]) %>% # select variable here
+            left_join(om_iter, by = "iter")
+          # To save results, Do this because somethings some iters are missing:
+          tmp3 = rep(NA, times = nFL)
+          if(nrow(tmp) > 0) {
+            tmp2 = tmp %>%
+              group_by(fleet) %>%
+              summarise(value = mean(value), .groups = "drop")
+            tmp3[match(tmp2$fleet, myoutput$fleet$metadata$Code)] = tmp2 %>% pull(value)
+          }
+          # Save:
+          myoutput$fleet$value[s,v,k,i,] = tmp3
+        } # OM
+      } # STOCK
+    } # MP
+  } # VAR
   
   # Output:
   return(myoutput)

@@ -27,7 +27,7 @@ i18n_translations <- list(
     # Help button About this plot:
     std_text_1 = " derived from ", # standard text for all navs
     std_text_2 = " different simulation runs across ", # standard text for all navs
-    std_text_3 = " OMs.", # standard text for all navs
+    std_text_3 = " OM iterations.", # standard text for all navs
     std_text_4 = "For more information on ", # standard text for all navs
     std_text_5 = " on the top-right side of this site.", # standard text for all navs
     help_ts_1 = "This chart shows changes in a selected variable over time. Two periods are differentiated: historical (gray) and projection (colored). Colors represent different MPs. The continuous line represents the median or mean",
@@ -44,13 +44,13 @@ i18n_translations <- list(
          Color shading can be added, where color intensity ranges from lowest to highest value by PI (column). 
          Displayed PIs are the mean",
     help_perf_2 = "The spider (or radar) plot compares multiple PIs (axes) across different MPs, with each MP is shown as a separate colored line whose distance from the center reflects its values.",
-    help_perf_3 = "The violin shows the median of PI values (colored dot) and the 90% and 50% interquartile range (colored thinner and thicker vertical lines, respectively). All PI values are represented as gray dots in the background. 
+    help_perf_3 = "The violin shows where the selected PI values are concentrated and how they are distributed, using width to represent frequency. All PI values are represented as gray dots in the background. 
          Panels represent selected PI while x-axis and colors represent MPs.",
     help_perf_4 = "MPs and PIs, see ",
     help_td_1 = "This chart shows the trade-off between two selected PIs by MP (colored dots). PIs are the mean",
     help_td_2 = "MPs and PIs, see ",
-    help_fleet_1 = "This chart shows changes in fleet-specific variables over projection years. 
-         Colors represent different MPs. The continuous line represents the median or mean",
+    help_fleet_1 = "This chart shows fleet-specific variables. Values correspond to mean over OM iterations.
+         Colors represent different MPs.",
     help_fleet_2 = "Uncertainty is shown as shadow: darker and lighter areas contain 50% and 90% of values, respectively.",
     help_fleet_3 = "variables, MPs and Fleets, see ",
     # About nav page:
@@ -61,7 +61,7 @@ i18n_translations <- list(
     description_kobe = "Four-quadrant figure that maps fishing mortality to biomass relative to reference points (e.g., maximum sustainable yield) for years in the projection period.",
     description_perf = "Quilt, Spider, and Violin figures to compare the performance among MPs by using a set of performance indicators (PIs).",
     description_td = "Scatterplot that compares two selected PIs among MPs.",
-    description_fleet = "Catch per fleet and MP for every year in the projection period.",
+    description_fleet = "Fleet-specific quantities.",
     # Download options:
     download_plot = "Download Plot",
     dwn_box_title = "Download Settings",
@@ -125,7 +125,7 @@ i18n_translations <- list(
     # Help button About this plot:
     std_text_1 = " calculado de ", # standard text for all navs
     std_text_2 = " simulaciones a lo largo de ", # standard text for all navs
-    std_text_3 = " OMs.", # standard text for all navs
+    std_text_3 = " iteraciones de OMs.", # standard text for all navs
     std_text_4 = "Para mayor información sobre ",
     std_text_5 = " en la esquina superior derecha de este sitio.", # standard text for all navs
     help_ts_1 = "Estos gráficos muestran cambios temporales en una variable selectionada. Dos periodos son diferenciados: histórico (gris) y proyección (coloreado). Colores representan diferentes MPs. La línea continua representa la media o mediana",
@@ -142,13 +142,13 @@ i18n_translations <- list(
          Sombreado para cada celda puede ser añadido, donde la intensidad de color varía desde el valor más bajo al más alto de cada PI.
          Los PIs mostrados son la media",
     help_perf_2 = "El gráfico 'Spider' (o de radar) compara varios PIs (ejes) entre diferentes MPs, y cada MP se representa mediante una línea de color independiente cuya distancia al centro refleja sus valores.",
-    help_perf_3 = "El gráfico muestra la mediana de los valores del PI (punto de color) y los rangos intercuartílicos del 90 % y del 50 % (líneas verticales de color más finas y más gruesas, respectivamente). Todos los valores del PI se representan como puntos grises en el fondo. 
+    help_perf_3 = "El gráfico de violín muestra dónde se concentran los valores de PI seleccionados y cómo se distribuyen, utilizando la anchura para representar la frecuencia. Todos los valores del PI se representan como puntos grises en el fondo. 
          Los paneles representan los PI seleccionados, mientras que el eje X y los colores representan los MPs.",
     help_perf_4 = "MPs y PIs, ver ",
     help_td_1 = "Este gráfico muestra el 'trade-off' entre dos PI seleccionadas por MP (puntos coloreados). PIs son la media",
     help_td_2 = "MPs y PIs, ver ",
-    help_fleet_1 = "Este gráfico muestra los cambios en la captura por flota a lo largo de los años del periodo de proyección.
-          Colores representan diferentes MPs. La línea continua representa la media o mediana",
+    help_fleet_1 = "Este gráfico muestra variables específicas de la flota. Los valores corresponden a la media a lo largo de las iteraciones de OM.
+         Los colores representan diferentes MP.",
     help_fleet_2 = "La incertidumbre es representada como sombras: áreas oscuras y claras contienen el 50% y 90% de valores, respectivamente.",
     help_fleet_3 = "variables, MPs y Flotas, ver ",
     # About nav page:
@@ -159,7 +159,7 @@ i18n_translations <- list(
     description_kobe = "Gráfico de cuatro cuadrantes que muestra la mortalidad por pesca y biomasa relativo a puntos de referencia (p.ej., rendimiento máximo sostenible) para años en el periodo de proyección.",
     description_perf = "Gráficos Quilt, Spider, y Violin para comparar el desempeño entre MPs mediante el uso de un conjunto de indicadores de desempeño (PIs).",
     description_td = "Gráfico de dispersión que comparar dos PIs seleccionados entre MPs.",
-    description_fleet = "Captura por flota y MP para los años del periodo de proyección.",
+    description_fleet = "Variables específicas para cada flota.",
     # Download options:
     download_plot = "Descargar gráfico",
     dwn_box_title = "Configuración de Descarga",
@@ -223,7 +223,7 @@ i18n_translations <- list(
     # Help button About this plot:
     std_text_1 = " tiré de ", # standard text for all navs
     std_text_2 = " différentes simulations réalisées ", # standard text for all navs
-    std_text_3 = " OMs.", # standard text for all navs
+    std_text_3 = " itérations des OMs.", # standard text for all navs
     std_text_4 = "Pour plus d'informations sur ", # standard text for all navs
     std_text_5 = " en haut à droite de ce site.", # standard text for all navs
     help_ts_1 = "Ce graphique illustre l'évolution d'une variable donnée au fil du temps. On distingue deux périodes : la période historique (en gris) et la période de projection (en couleur). Les couleurs représentent différents députés. La ligne continue correspond à la médiane ou à la moyenne",
@@ -240,13 +240,13 @@ i18n_translations <- list(
          Il est possible d'ajouter un dégradé de couleurs, l'intensité de la couleur variant de la valeur la plus basse à la plus élevée pour chaque PI (colonne). 
          Les PI affichés correspondent à la moyenne",
     help_perf_2 = "Le graphique 'Spider' (ou radar) compare plusieurs PIs (axes) entre différents MPs, chaque MP étant représenté par une ligne colorée distincte dont la distance par rapport au centre reflète ses valeurs.",
-    help_perf_3 = "Le graphique en forme de violon représente la médiane des valeurs PI (point coloré) ainsi que les limites à 90 % et 50 % de l'écart interquartile (lignes verticales colorées plus fines et plus épaisses, respectivement). Toutes les valeurs PI sont représentées par des points gris en arrière-plan. 
+    help_perf_3 = "Le graphique en violon montre où se concentrent les valeurs PI sélectionnées et comment elles sont réparties, la largeur représentant la fréquence. Toutes les valeurs PI sont représentées par des points gris en arrière-plan. 
          Les panneaux représentent les PI sélectionnées, tandis que l'axe des x et les couleurs représentent les MPs.",
     help_perf_4 = "MPs et PIs, voir ",
     help_td_1 = "Ce graphique illustre le compromis entre deux indicateurs de performance (PI) sélectionnés par MP (points colorés). Les PI correspondent à la moyenne",
     help_td_2 = "MPs et PIs, voir ",
-    help_fleet_1 = "Ce graphique présente l'évolution des variables spécifiques à la flotte au cours des années de projection. 
-         Les couleurs représentent les différents MP. La ligne continue représente la médiane ou la moyenne",
+    help_fleet_1 = "Ce graphique présente des variables spécifiques à la flotte. Les valeurs correspondent à la moyenne calculée sur les itérations de l'OM.
+         Les couleurs représentent les différents MP.",
     help_fleet_2 = "L'incertitude est représentée par des nuances d'ombre : les zones plus sombres et plus claires correspondent respectivement à 50 % et 90 % des valeurs.",
     help_fleet_3 = "variables, MPs et Flottes, voir ",
     # About nav page:
@@ -257,7 +257,7 @@ i18n_translations <- list(
     description_kobe = "Graphique à quatre quadrants qui représente la mortalité par pêche en fonction de la biomasse par rapport à des points de référence (par exemple, le rendement maximal durable) pour les années de la période de projection.",
     description_perf = "Graphiques Quilt, Spider et Violin pour comparer les performances des MP en utilisant un ensemble d'indicateurs de performance (PIs).",
     description_td = "Diagramme de dispersion comparant deux PI sélectionnés parmi les MP.",
-    description_fleet = "Captures par flotte et MP pour chaque année de la période de projection.",
+    description_fleet = "Quantités spécifiques à la flotte.",
     # Download options:
     download_plot = "Télécharger le graphique",
     dwn_box_title = "Paramètres de téléchargement",

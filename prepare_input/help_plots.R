@@ -4,77 +4,77 @@ library(ggradar)
 
 # Violin (old) ------------------------------------------------------------------
 
-# # Create simple example data
-# set.seed(1)
-# fake_data <- data.frame(
-#   group = "Example",
-#   values = c(rnorm(200, mean = 70, sd = 10))
-# )
-# 
-# # Create violin plot
-# p1 = ggplot(fake_data, aes(x = group, y = values)) +
-#   geom_violin(fill = "#ffffff", color = "#ffffff") +
-#   # Add simple explanatory text
-#   annotate("text", x = 1.1, y = 95, label = "Rare results", size = 5, hjust = 0, color = '#ffffff') +
-#   annotate("text", x = 1.1, y = 45, label = "Rare results", size = 5, hjust = 0, color = '#ffffff') +
-#   annotate("text", x = 1, y = 70, label = "Most frequent results", size = 5) +
-#   # Clean theme for non-technical audience
-#   theme_void() +
-#   theme(plot.background = element_rect(fill = '#000000', colour = '#000000'))
-# ggsave(filename = file.path("www", 'violin.png'), plot = p1, 
-#        width = 80, height = 70, units = "mm", dpi = 300)
+# Create simple example data
+set.seed(1)
+fake_data <- data.frame(
+  group = "Example",
+  values = c(rnorm(200, mean = 70, sd = 10))
+)
+
+# Create violin plot
+p1 = ggplot(fake_data, aes(x = group, y = values)) +
+  geom_violin(fill = "#ffffff", color = "#ffffff") +
+  # Add simple explanatory text
+  annotate("text", x = 1.1, y = 95, label = "Rare results", size = 5, hjust = 0, color = '#ffffff') +
+  annotate("text", x = 1.1, y = 45, label = "Rare results", size = 5, hjust = 0, color = '#ffffff') +
+  annotate("text", x = 1, y = 70, label = "Most frequent results", size = 5) +
+  # Clean theme for non-technical audience
+  theme_void() +
+  theme(plot.background = element_rect(fill = '#000000', colour = '#000000'))
+ggsave(filename = file.path("www", 'violin.png'), plot = p1,
+       width = 80, height = 70, units = "mm", dpi = 300)
 
 
 # Violin (errorbar) ------------------------------------------------------------------
 
-# Create simple example data
-set.seed(1)
-fake_data <- data.frame(
-  group = "MP_1",
-  value = c(rnorm(200, mean = 70, sd = 10))
-)
-data_summ = fake_data %>%
-  group_by(group) %>%
-  summarise(q1min = quantile(value, probs = 0.05),
-            q1max = quantile(value, probs = 0.95),
-            q2min = quantile(value, probs = 0.25),
-            q2max = quantile(value, probs = 0.75),
-            med = quantile(value, probs = 0.5),
-            .groups = "drop")
-
-# Create violin plot
-p1 = ggplot(data = fake_data, aes(x = group, y = value)) +
-  geom_point(size = 0.5, alpha = 0.3, position = position_jitter(width = 0.05, height = 0), color = '#ffffff') +
-  geom_pointrange(data = data_summ, aes(y = med, ymin = q1min, ymax = q1max), color = '#ffffff') +
-  geom_pointrange(data = data_summ, aes(y = med, ymin = q2min, ymax = q2max), linewidth = 1.75, color = '#ffffff') +
-  geom_point(data = data_summ, aes(y = med), size = 2.75, color = '#ffffff') +
-  # Add simple explanatory text
-  annotate("text", x = 1.06, y = 85, label = "Where 90% of values fall", size = 4.5, hjust = 0, color = '#ffffff') +
-  annotate("text", x = 1.08, y = 65, label = "Where 50% of values fall", size = 4.5, hjust = 0, color = '#ffffff') +
-  annotate("text", x = 1.11, y = 70, label = "Most typical value", hjust = 0, size = 4.5, color = '#ffffff') +
-  # Add brackets 1:
-  annotate("segment", x = 1.05, xend = 1.05, y = data_summ$q1min, yend = data_summ$q1max, 
-           size = 0.9, color = "#ffffff") +
-  annotate("segment", x = 1.03, xend = 1.05, y = data_summ$q1min, yend = data_summ$q1min, 
-           size = 0.9, color = "#ffffff") +
-  annotate("segment", x = 1.03, xend = 1.05, y = data_summ$q1max, yend = data_summ$q1max, 
-           size = 0.9, color = "#ffffff") +
-  # Add brackets 2:
-  annotate("segment", x = 1.07, xend = 1.07, y = data_summ$q2min, yend = data_summ$q2max, 
-           size = 0.9, color = "#ffffff") +
-  annotate("segment", x = 1.04, xend = 1.07, y = data_summ$q2min, yend = data_summ$q2min, 
-           size = 0.9, color = "#ffffff") +
-  annotate("segment", x = 1.04, xend = 1.07, y = data_summ$q2max, yend = data_summ$q2max, 
-           size = 0.9, color = "#ffffff") +
-  # Add arrow for median:
-  geom_segment(x = 1.02, xend = 1.1, y = data_summ$med, yend = data_summ$med, 
-               arrow =  arrow(length = unit(0.15, "cm")), 
-               color = "#ffffff") +
-  # Clean theme for non-technical audience
-  theme_void() +
-  theme(plot.background = element_rect(fill = '#000000', colour = '#000000'))
-ggsave(filename = file.path("www", 'violin.png'), plot = p1, 
-       width = 120, height = 65, units = "mm", dpi = 300)
+# # Create simple example data
+# set.seed(1)
+# fake_data <- data.frame(
+#   group = "MP_1",
+#   value = c(rnorm(200, mean = 70, sd = 10))
+# )
+# data_summ = fake_data %>%
+#   group_by(group) %>%
+#   summarise(q1min = quantile(value, probs = 0.05),
+#             q1max = quantile(value, probs = 0.95),
+#             q2min = quantile(value, probs = 0.25),
+#             q2max = quantile(value, probs = 0.75),
+#             med = quantile(value, probs = 0.5),
+#             .groups = "drop")
+# 
+# # Create violin plot
+# p1 = ggplot(data = fake_data, aes(x = group, y = value)) +
+#   geom_point(size = 0.5, alpha = 0.3, position = position_jitter(width = 0.05, height = 0), color = '#ffffff') +
+#   geom_pointrange(data = data_summ, aes(y = med, ymin = q1min, ymax = q1max), color = '#ffffff') +
+#   geom_pointrange(data = data_summ, aes(y = med, ymin = q2min, ymax = q2max), linewidth = 1.75, color = '#ffffff') +
+#   geom_point(data = data_summ, aes(y = med), size = 2.75, color = '#ffffff') +
+#   # Add simple explanatory text
+#   annotate("text", x = 1.06, y = 85, label = "Where 90% of values fall", size = 4.5, hjust = 0, color = '#ffffff') +
+#   annotate("text", x = 1.08, y = 65, label = "Where 50% of values fall", size = 4.5, hjust = 0, color = '#ffffff') +
+#   annotate("text", x = 1.11, y = 70, label = "Most typical value", hjust = 0, size = 4.5, color = '#ffffff') +
+#   # Add brackets 1:
+#   annotate("segment", x = 1.05, xend = 1.05, y = data_summ$q1min, yend = data_summ$q1max, 
+#            size = 0.9, color = "#ffffff") +
+#   annotate("segment", x = 1.03, xend = 1.05, y = data_summ$q1min, yend = data_summ$q1min, 
+#            size = 0.9, color = "#ffffff") +
+#   annotate("segment", x = 1.03, xend = 1.05, y = data_summ$q1max, yend = data_summ$q1max, 
+#            size = 0.9, color = "#ffffff") +
+#   # Add brackets 2:
+#   annotate("segment", x = 1.07, xend = 1.07, y = data_summ$q2min, yend = data_summ$q2max, 
+#            size = 0.9, color = "#ffffff") +
+#   annotate("segment", x = 1.04, xend = 1.07, y = data_summ$q2min, yend = data_summ$q2min, 
+#            size = 0.9, color = "#ffffff") +
+#   annotate("segment", x = 1.04, xend = 1.07, y = data_summ$q2max, yend = data_summ$q2max, 
+#            size = 0.9, color = "#ffffff") +
+#   # Add arrow for median:
+#   geom_segment(x = 1.02, xend = 1.1, y = data_summ$med, yend = data_summ$med, 
+#                arrow =  arrow(length = unit(0.15, "cm")), 
+#                color = "#ffffff") +
+#   # Clean theme for non-technical audience
+#   theme_void() +
+#   theme(plot.background = element_rect(fill = '#000000', colour = '#000000'))
+# ggsave(filename = file.path("www", 'violin.png'), plot = p1, 
+#        width = 120, height = 65, units = "mm", dpi = 300)
 
 
 # Time Series -------------------------------------------------------------
