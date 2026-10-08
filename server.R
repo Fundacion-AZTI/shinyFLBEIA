@@ -1559,22 +1559,29 @@ server = function(input, output, session) {
     if("inc_perc" %in% input$opts) {
       p1 = p1 + 
         geom_ribbon(data = plotdat, aes(ymin = q10, ymax = q90, fill = MPs), alpha = 0.1) +
-        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) +
-        geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
-        geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
-        geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) 
+        if("inc_hist" %in% input$opts) {
+          p1 = p1 +
+            geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
+            geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
+            geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+        }
     }
     
     # Central line:
     if(input$central == "mean") {
       p1 = p1 +
-        geom_line(aes(y = avg, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+        geom_line(aes(y = avg, color = MPs)) 
+        if("inc_hist" %in% input$opts) {
+          p1 = p1 + geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+        }
     }
     if(input$central == "median") {
       p1 = p1 +
-        geom_line(aes(y = q50, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+        geom_line(aes(y = q50, color = MPs)) 
+      if("inc_hist" %in% input$opts) {
+        p1 = p1 + geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+      }
     }
     
     if("inc_mp_lab" %in% input$opts) {
@@ -1586,7 +1593,7 @@ server = function(input, output, session) {
     
     if(!("inc_hist" %in% input$opts)) {
       p1 = p1 + 
-        scale_x_continuous(limits = c(my_data()$timeseries$timenow, NA))
+        scale_x_continuous(limits = c(my_data()$timeseries$timenow, NA)) 
       min_x_lab = my_data()$timeseries$timenow
     }
     
@@ -1605,7 +1612,7 @@ server = function(input, output, session) {
                 hjust = 0, size = 5, na.rm = TRUE)
     
     # Coordinates:
-    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA))
+    p1 = p1 + coord_cartesian(expand = c(1,0,0,0), ylim = c(0, NA))
     
     # Make panels:
     if(length(these_stocks) > 1) {
@@ -1671,22 +1678,29 @@ server = function(input, output, session) {
     if("inc_perc" %in% input$opts) {
       p1 = p1 + 
         geom_ribbon(data = plotdat, aes(ymin = q10, ymax = q90, fill = MPs), alpha = 0.1) +
-        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) +
-        geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
-        geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
-        geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) 
+        if("inc_hist" %in% input$opts) {
+        p1 = p1 + 
+          geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
+          geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
+          geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+        }
     }
     
     # Central line:
     if(input$central == "mean") {
       p1 = p1 +
-        geom_line(aes(y = avg, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+        geom_line(aes(y = avg, color = MPs)) 
+        if("inc_hist" %in% input$opts) {
+          p1 = p1 + geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+        }
     }
     if(input$central == "median") {
       p1 = p1 +
-        geom_line(aes(y = q50, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+        geom_line(aes(y = q50, color = MPs)) 
+      if("inc_hist" %in% input$opts) {
+        p1 = p1 + geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+      }
     }
     
     if(!("inc_hist" %in% input$opts)) {
@@ -1709,7 +1723,7 @@ server = function(input, output, session) {
                y = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) 
     
     # Coordinates:
-    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA)) 
+    p1 = p1 + coord_cartesian(expand = c(1,0,0,0), ylim = c(0, NA)) 
     
     # Add Stock label only if n_stocks > 1
     if(my_data()$n_stocks > 1) {
@@ -1773,22 +1787,29 @@ server = function(input, output, session) {
     if("inc_perc" %in% input$opts) {
       p1 = p1 + 
         geom_ribbon(data = plotdat, aes(ymin = q10, ymax = q90, fill = MPs), alpha = 0.1) +
-        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) +
-        geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
-        geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
-        geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+        geom_ribbon(data = plotdat, aes(ymin = q25, ymax = q75, fill = MPs), alpha = 0.1) 
+      if("inc_hist" %in% input$opts) {
+        p1 = p1 + 
+          geom_line(data = histdat, aes(y = q10), color = "gray80", linetype = "dashed") +
+          geom_line(data = histdat, aes(y = q90), color = "gray80", linetype = "dashed") +
+          geom_ribbon(data = histdat, aes(ymin = q25, ymax = q75), fill = "gray80", alpha = 0.5)
+      }
     }
     
     # Central line:
     if(input$central == "mean") {
       p1 = p1 +
-        geom_line(aes(y = avg, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+        geom_line(aes(y = avg, color = MPs))
+      if("inc_hist" %in% input$opts) {
+        p1 = p1 + geom_line(data = histdat, aes(x = Years, y = avg), color = "gray80") 
+      }
     }
     if(input$central == "median") {
       p1 = p1 +
-        geom_line(aes(y = q50, color = MPs)) +
-        geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+        geom_line(aes(y = q50, color = MPs))
+      if("inc_hist" %in% input$opts) {
+        p1 = p1 + geom_line(data = histdat, aes(x = Years, y = q50), color = "gray80") 
+      }
     }
     
     if("inc_mp_lab" %in% input$opts & !input$by_mp) {
@@ -1818,7 +1839,7 @@ server = function(input, output, session) {
                y = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) 
     
     # Coordinates:
-    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA)) 
+    p1 = p1 + coord_cartesian(expand = c(1,0,0,0), ylim = c(0, NA)) 
     
     # Add Stock label only if n_stocks > 1
     if(my_data()$n_stocks > 1) {
@@ -1890,8 +1911,10 @@ server = function(input, output, session) {
     
     # Line:
     p1 = p1 +
-      geom_line(aes(y = value, color = MPs)) +
-      geom_line(data = histdat, aes(x = Years, y = value), color = "gray80") 
+      geom_line(aes(y = value, color = MPs))
+    if("inc_hist" %in% input$opts) {
+      p1 = p1 + geom_line(data = histdat, aes(x = Years, y = value), color = "gray80") 
+    }
     
     if("inc_mp_lab" %in% input$opts & !input$by_mp) {
       p1 = p1 + 
@@ -1920,7 +1943,7 @@ server = function(input, output, session) {
                y = my_data()$timeseries$limit[match(input$var_ts, my_data()$timeseries$metadata[["en"]]$Code)]) 
     
     # Coordinates:
-    p1 = p1 + coord_cartesian(expand = FALSE, ylim = c(0, NA)) 
+    p1 = p1 + coord_cartesian(expand = c(1,0,0,0), ylim = c(0, NA)) 
     
     # Add facets and print plot:
     if(!input$by_mp) {
