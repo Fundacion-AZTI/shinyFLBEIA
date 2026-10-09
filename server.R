@@ -2372,7 +2372,7 @@ server = function(input, output, session) {
       #geom_pointrange(data = mytab_summ, aes(y = med, ymin = q2min, ymax = q2max, color = MPs), linewidth = 1.75) +
       #geom_point(data = mytab_summ, aes(y = med, color = MPs), size = 2.5) +
       #scale_color_manual(values = my_col_vec()) +
-      geom_violin(aes(fill = MPs), alpha = 0.75, adjust = 0.75) +
+      geom_violin(aes(fill = MPs), alpha = 0.75, scale = "width") +
       scale_fill_manual(values = my_col_vec()) +
       ylab(NULL) + xlab(NULL) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
