@@ -591,7 +591,7 @@ PI_calculation = function(mp_merged, tac_merged, myoutput,
   }
   
   # TAC Change:
-  if(pi_code == 'Tc') {
+  if(pi_code == 'MAP') {
     
 	for(i in 1:nMP) {
       for(s in 1:nST) {

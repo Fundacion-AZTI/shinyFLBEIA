@@ -147,9 +147,8 @@ server = function(input, output, session) {
     opts_vec
   })
   oth_setts_ts_2 = reactive ({ 
-    opts_vec = c("inc_perc", "inc_mp_lab", "inc_hist")
+    opts_vec = c("inc_perc", "inc_hist")
     names(opts_vec) = c(tt("percentiles", lang_code()),
-                        tt("mp_labels", lang_code()),
                         tt("historical", lang_code()) )
     opts_vec
   })
@@ -971,7 +970,7 @@ server = function(input, output, session) {
       inputId = "opts",
       label = NULL,
       choices = oth_setts_ts_2(),
-      selected = c("inc_perc", "inc_mp_lab", "inc_hist"),
+      selected = c("inc_perc", "inc_hist"),
       inline = FALSE
     )
   })
@@ -1545,12 +1544,14 @@ server = function(input, output, session) {
       scale_color_manual(values = my_col_vec()) +
       scale_fill_manual(values = my_col_vec()) +
       ylab(NULL) + xlab(my_data()$timeseries$timelab) +
-      theme(legend.position = "none",
+      labs(color = NULL, fill = NULL) +
+      theme(legend.position = "bottom",
             axis.title.x = element_text(size = axs_lbl_sz),
             axis.title.y = element_text(size = axs_lbl_sz),
             axis.text = element_text(size = axs_sz),
             axis.text.y = element_text(angle = 90, hjust = 0.5),
             strip.text = element_text(size = fct_ttl_sz, face = "bold"),
+            legend.text = element_text(size = 14),
             strip.placement = "outside",
             strip.background = element_blank()) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
@@ -1584,12 +1585,12 @@ server = function(input, output, session) {
       }
     }
     
-    if("inc_mp_lab" %in% input$opts) {
-      p1 = p1 + 
-        geom_text_repel(data = labdat, aes(x = Years, y = q50, label = MPs, color = MPs),
-                        nudge_x = 4, direction = "y", hjust = "left",
-                        size = rpl_sz, segment.linetype = 6)
-    }
+    # if("inc_mp_lab" %in% input$opts) {
+    #   p1 = p1 + 
+    #     geom_text_repel(data = labdat, aes(x = Years, y = q50, label = MPs, color = MPs),
+    #                     nudge_x = 4, direction = "y", hjust = "left",
+    #                     size = rpl_sz, segment.linetype = 6)
+    # }
     
     if(!("inc_hist" %in% input$opts)) {
       p1 = p1 + 
