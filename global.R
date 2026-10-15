@@ -38,6 +38,132 @@ run_locally = TRUE # TRUE = run app locally, FALSE = when deploying on shinyapps
 # IMPORTANT: never commit run_locally = FALSE to Github repo
 
 # -------------------------------------------------------------------------
+# Load deployed MSE datasets ONCE per R worker.
+# These objects are shared by all user sessions handled by the same worker.
+# Local mode keeps the existing per-user upload workflow.
+allowed_MSE = c("NALB", "BET", "YFT", "SKJ", "TROP")
+
+MSE_GLOBAL = NULL
+if (!isTRUE(run_locally)) {
+  mse_paths = file.path("data", paste0(allowed_MSE, ".flbeia"))
+  names(mse_paths) = allowed_MSE
+  
+  existing = file.exists(mse_paths)
+  if (!any(existing)) {
+    stop("No .flbeia datasets found in data/ for: ", paste(allowed_MSE, collapse = ", "))
+  }
+  
+  MSE_GLOBAL = lapply(mse_paths[existing], readRDS)
+  
+  message(
+    "Loaded global MSE datasets: ",
+    paste(names(MSE_GLOBAL), collapse = ", "),
+    " | total RAM = ",
+    round(as.numeric(object.size(MSE_GLOBAL)) / 1024^2, 1),
+    " MB"
+  )
+}
+
+
+# -------------------------------------------------------------------------
+# Produce data objects that depend only on the MSE file. In deployment mode,
+# this function is called once per dataset and per R worker, not per session.
+preprocess_MSE = function(x) {
+  ts_dat = reshape2::melt(x$timeseries$value) %>% stats::na.omit()
+  
+  ts_dat_summ = ts_dat %>%
+    dplyr::group_by(Stock, OMs, MPs, Var, Years) %>%
+    dplyr::summarise(
+      q10 = stats::quantile(value, 0.05),
+      q25 = stats::quantile(value, 0.25),
+      q50 = stats::quantile(value, 0.50),
+      q75 = stats::quantile(value, 0.75),
+      q90 = stats::quantile(value, 0.95),
+      avg = mean(value), .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      Stock = factor(Stock, levels = x$stocks), MPs = factor(MPs),
+      OMs = factor(OMs, levels = x$om$metadata$factor[["en"]]$Factor),
+      Var = factor(Var, levels = x$timeseries$metadata[["en"]]$Code)
+    )
+  
+  ts_dat_hist = ts_dat_summ %>%
+    dplyr::filter(Years <= x$timeseries$timenow) %>%
+    dplyr::select(-c(MPs, OMs)) %>%
+    dplyr::group_by(Stock, Var, Years) %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), mean), .groups = "drop")
+  
+  tar_lim_dat = data.frame(
+    Target = x$timeseries$target, Limit = x$timeseries$limit,
+    Var = x$timeseries$metadata[["en"]]$Code
+  )
+  tar_lim_dat = purrr::map_dfr(
+    x$stocks, ~ dplyr::mutate(tar_lim_dat, Stock = .x)
+  ) %>% dplyr::mutate(
+    Var = factor(Var, levels = x$timeseries$metadata[["en"]]$Code)
+  )
+  
+  kobe_dat = reshape2::melt(x$kobe$value) %>%
+    dplyr::mutate(
+      Stock = factor(Stock, levels = x$stocks),
+      OMs = factor(OMs, levels = x$om$metadata$factor[["en"]]$Factor),
+      MPs = factor(MPs)
+    ) %>% stats::na.omit()
+  
+  lst_yr_kobe_dat = kobe_dat %>% dplyr::filter(Years == max(Years))
+  
+  median_lst_kobe_dat = lst_yr_kobe_dat %>%
+    dplyr::group_by(Stock, MPs, OMs, Var) %>%
+    dplyr::summarise(value = median(value), .groups = "drop") %>%
+    dplyr::mutate(ax_type = dplyr::if_else(
+      Var == x$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
+    dplyr::select(-Var) %>% tidyr::pivot_wider(names_from = "ax_type")
+  
+  median_frs_kobe_dat = kobe_dat %>%
+    dplyr::filter(Years == min(Years)) %>%
+    dplyr::group_by(Stock, MPs, OMs, Var) %>%
+    dplyr::summarise(value = median(value), .groups = "drop") %>%
+    dplyr::mutate(ax_type = dplyr::if_else(
+      Var == x$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
+    dplyr::select(-Var) %>% tidyr::pivot_wider(names_from = "ax_type")
+  
+  perf_dat = reshape2::melt(x$pi$value) %>%
+    dplyr::mutate(
+      Stock = factor(Stock, levels = x$stocks),
+      OMs = factor(OMs, levels = x$om$metadata$factor[["en"]]$Factor),
+      MPs = factor(MPs)
+    ) %>% stats::na.omit()
+  
+  fleet_dat_summ = reshape2::melt(x$fleet$value) %>% stats::na.omit() %>%
+    dplyr::mutate(
+      Stock = factor(Stock, levels = x$stocks),
+      OMs = factor(OMs, levels = x$om$metadata$factor[["en"]]$Factor),
+      MPs = factor(MPs),
+      Fleet = factor(Fleet, levels = x$fleet$metadata[["en"]]$Code),
+      Var = factor(Var, levels = x$fleet$variables$Code)
+    )
+  
+  list(
+    ts_dat = ts_dat, ts_dat_summ = ts_dat_summ,
+    ts_dat_hist = ts_dat_hist, tar_lim_dat = tar_lim_dat,
+    kobe_dat = kobe_dat, lst_yr_kobe_dat = lst_yr_kobe_dat,
+    median_lst_kobe_dat = median_lst_kobe_dat,
+    median_frs_kobe_dat = median_frs_kobe_dat,
+    perf_dat = perf_dat, fleet_dat_summ = fleet_dat_summ
+  )
+}
+
+MSE_PREPROCESSED = NULL
+if (!isTRUE(run_locally)) {
+  MSE_PREPROCESSED = lapply(MSE_GLOBAL, preprocess_MSE)
+  message(
+    "Global preprocessed tables created | total RAM = ",
+    round(as.numeric(object.size(MSE_PREPROCESSED)) / 1024^2, 1), " MB"
+  )
+  invisible(gc())
+}
+
+# -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 # Enlarged auto fonts
 thematic::thematic_shiny(

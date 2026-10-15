@@ -33,47 +33,40 @@ server = function(input, output, session) {
     })
   }
   
-  # Deploy on shinyapps.io
+  # shinyapps.io: select an object that was already loaded in global.R.
+  # No readRDS() is performed when a user connects.
   if(!isTRUE(run_locally)) {
-    
-    # Show the waiter on app startup
     waiter_show(
       html = tagList(
         img(src = "__AZTI_A_principal.png", width = "200px"),
         h3("Loading FLBEIA Shiny App...")
       ),
-      color = "rgba(0, 0, 0, 0.7)"  # Semi-transparent overlay
+      color = "rgba(0, 0, 0, 0.7)"
     )
     
-    # Your reactive expressions and server logic here...
-    # Add a delay and hide the waiter when ready
-    observe({
-      # Replace this with your actual data loading/processing
-      Sys.sleep(2)  # Simulate loading time
-      waiter_hide()  # Hide the waiter when done
-    }, priority = 100)  # High priority to run first
-    
     my_data <- reactive({
-      # Get query string
       query <- parseQueryString(session$clientData$url_search)
       dataset_name <- query$dataset
-      # Default dataset if none provided
-      if (is.null(dataset_name)) {
+      
+      if (is.null(dataset_name) || !nzchar(dataset_name)) {
         dataset_name <- default_MSE
       }
-      # Construct filename
-      file_path <- paste0("data/", dataset_name, ".flbeia")
-      # Validate allowed datasets (important for security)
-      allowed <- c("NALB", "BET", "YFT", "SKJ", "TROP")
-      if (!dataset_name %in% allowed) {
-        stop("Invalid dataset")
-      }
-      readRDS(file_path)
+      
+      validate(need(
+        dataset_name %in% names(MSE_GLOBAL),
+        paste0("Dataset '", dataset_name, "' is not available.")
+      ))
+      
+      # Return the globally loaded object. R does not deserialize another copy.
+      MSE_GLOBAL[[dataset_name]]
     })
+    
+    # There is no session-level file loading anymore, so hide immediately.
+    observe({
+      req(my_data())
+      waiter_hide()
+    }, priority = 100)
   }
-  
-  # Remove waiter hide:
-  # observeEvent(my_data(), waiter_hide(), ignoreInit = FALSE)
   
   # -------------------------------------------------------------------------
   # Reactive language code
@@ -278,86 +271,37 @@ server = function(input, output, session) {
   update_plot_title = reactive ({ tt("update_plot", lang_code()) })
   
   # -------------------------------------------------------------------------
-  # Preprocess data:
-  ts_dat = reactive({
+  # Preprocessed data:
+  # Deployment uses the shared tables built once in global.R. Local uploads are
+  # still preprocessed once inside their own session.
+  preprocessed_data = reactive({
     req(my_data())
-    ts_dat = reshape2::melt(my_data()$timeseries$value)
-    ts_dat = ts_dat %>% na.omit
-    ts_dat
+    if (isTRUE(run_locally)) {
+      preprocess_MSE(my_data())
+    } else {
+      query = parseQueryString(session$clientData$url_search)
+      dataset_name = query$dataset
+      if (is.null(dataset_name) || !nzchar(dataset_name)) dataset_name = default_MSE
+      validate(need(
+        dataset_name %in% names(MSE_PREPROCESSED),
+        paste0("Preprocessed dataset '", dataset_name, "' is not available.")
+      ))
+      MSE_PREPROCESSED[[dataset_name]]
+    }
   })
-  ts_dat_summ = reactive({
-    ts_dat_summ = ts_dat() %>% dplyr::group_by(Stock, OMs, MPs, Var, Years) %>%
-      dplyr::summarise(q10 = quantile(value, probs = 0.05),
-                       q25 = quantile(value, probs = 0.25),
-                       q50 = quantile(value, probs = 0.5),
-                       q75 = quantile(value, probs = 0.75),
-                       q90 = quantile(value, probs = 0.95),
-                       avg = mean(value), .groups = "drop")
-    ts_dat_summ = ts_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                MPs = factor(MPs),
-                                                OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
-                                                Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
-    ts_dat_summ
-  })
-  ts_dat_hist = reactive({
-    ts_dat_hist = ts_dat_summ() %>%
-      dplyr::filter(Years <= my_data()$timeseries$timenow) %>%
-      dplyr::select(-c(MPs, OMs)) %>%
-      dplyr::group_by(Stock, Var, Years) %>% summarise_all(mean) # does not matter the function
-    ts_dat_hist
-  })
-  tar_lim_dat = reactive({
-    tar_lim_dat = data.frame(Target = my_data()$timeseries$target,
-                             Limit = my_data()$timeseries$limit,
-                             Var = my_data()$timeseries$metadata[["en"]]$Code)
-    tar_lim_dat = purrr::map_dfr(my_data()$stocks, ~ mutate(tar_lim_dat, group = .x)) %>% 
-      rename(Stock = group)
-    tar_lim_dat = tar_lim_dat %>% dplyr::mutate(Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
-    tar_lim_dat
-  })
-  kobe_dat = reactive({
-    kobe_dat = reshape2::melt(my_data()$kobe$value) %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                                    OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
-                                                                    MPs = factor(MPs))
-    kobe_dat = kobe_dat %>% na.omit
-    kobe_dat
-  })
-  lst_yr_kobe_dat = reactive({
-    lst_yr_kobe_dat = kobe_dat() %>% filter(Years == max(Years))
-    lst_yr_kobe_dat
-  })
-  median_lst_kobe_dat = reactive({
-    median_lst_kobe_dat = lst_yr_kobe_dat() %>% group_by(Stock, MPs, OMs, Var) %>% 
-      summarise(value = median(value), .groups = "drop") %>%
-      mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
-      select(-Var) %>% pivot_wider(names_from = "ax_type")
-    median_lst_kobe_dat
-  })
-  median_frs_kobe_dat = reactive({
-    frs_yr_kobe_dat = kobe_dat() %>% filter(Years == min(Years))
-    median_frs_kobe_dat = frs_yr_kobe_dat %>% group_by(Stock, MPs, OMs, Var) %>% 
-      summarise(value = median(value), .groups = "drop") %>%
-      mutate(ax_type = if_else(Var == my_data()$kobe$metadata$Code[1], "x_axis", "y_axis")) %>%
-      select(-Var) %>% pivot_wider(names_from = "ax_type")
-    median_frs_kobe_dat
-  })
-  perf_dat = reactive({
-    perf_dat = reshape2::melt(my_data()$pi$value) %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                                  OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
-                                                                  MPs = factor(MPs))
-    perf_dat = perf_dat %>% na.omit 
-    perf_dat
-  })
-  fleet_dat_summ = reactive({
-    fleet_dat = reshape2::melt(my_data()$fleet$value)
-    fleet_dat_summ = fleet_dat %>% na.omit 
-    fleet_dat_summ = fleet_dat_summ %>% dplyr::mutate(Stock = factor(Stock, levels = my_data()$stocks),
-                                                      OMs = factor(OMs, levels = my_data()$om$metadata$factor[["en"]]$Factor),
-                                                      MPs = factor(MPs),
-                                                      Fleet = factor(Fleet, levels = my_data()$fleet$metadata[["en"]]$Code),
-                                                      Var = factor(Var, levels = my_data()$fleet$variables$Code))
-    fleet_dat_summ
-  })
+  
+  # Preserve the original reactive names used throughout server.R.
+  ts_dat = reactive(preprocessed_data()$ts_dat)
+  ts_dat_summ = reactive(preprocessed_data()$ts_dat_summ)
+  ts_dat_hist = reactive(preprocessed_data()$ts_dat_hist)
+  tar_lim_dat = reactive(preprocessed_data()$tar_lim_dat)
+  kobe_dat = reactive(preprocessed_data()$kobe_dat)
+  lst_yr_kobe_dat = reactive(preprocessed_data()$lst_yr_kobe_dat)
+  median_lst_kobe_dat = reactive(preprocessed_data()$median_lst_kobe_dat)
+  median_frs_kobe_dat = reactive(preprocessed_data()$median_frs_kobe_dat)
+  perf_dat = reactive(preprocessed_data()$perf_dat)
+  fleet_dat_summ = reactive(preprocessed_data()$fleet_dat_summ)
+  
   col_mp_lab = reactive({
     req(my_data())
     col_mp_lab = list()
