@@ -72,6 +72,9 @@ server = function(input, output, session) {
     })
   }
   
+  # Remove waiter hide:
+  # observeEvent(my_data(), waiter_hide(), ignoreInit = FALSE)
+  
   # -------------------------------------------------------------------------
   # Reactive language code
   lang_code <- reactive({
@@ -279,7 +282,7 @@ server = function(input, output, session) {
   ts_dat = reactive({
     req(my_data())
     ts_dat = reshape2::melt(my_data()$timeseries$value)
-    ts_dat = ts_dat %>% na.omit 
+    ts_dat = ts_dat %>% na.omit
     ts_dat
   })
   ts_dat_summ = reactive({
@@ -296,8 +299,8 @@ server = function(input, output, session) {
                                                 Var = factor(Var, levels = my_data()$timeseries$metadata[["en"]]$Code))
     ts_dat_summ
   })
-  ts_dat_hist = reactive({ 
-    ts_dat_hist = ts_dat_summ() %>% 
+  ts_dat_hist = reactive({
+    ts_dat_hist = ts_dat_summ() %>%
       dplyr::filter(Years <= my_data()$timeseries$timenow) %>%
       dplyr::select(-c(MPs, OMs)) %>%
       dplyr::group_by(Stock, Var, Years) %>% summarise_all(mean) # does not matter the function
@@ -1774,12 +1777,13 @@ server = function(input, output, session) {
     p1 = p1 +
       scale_color_manual(values = my_col_vec()) +
       scale_fill_manual(values = my_col_vec()) +
-      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab) +
-      theme(legend.position = "none",
+      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab, color = NULL, fill = NULL) +
+      theme(legend.position = "bottom",
             axis.title.x = element_text(size = axs_lbl_sz),
             axis.title.y = element_text(size = axs_lbl_sz),
             axis.text = element_text(size = axs_sz),
             axis.text.y = element_text(angle = 90, hjust = 0.5),
+            legend.text = element_text(size = 14),
             strip.text = element_text(size = fct_ttl_sz, face = "bold"),
             strip.background = element_blank()) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
@@ -1813,13 +1817,6 @@ server = function(input, output, session) {
       }
     }
     
-    if("inc_mp_lab" %in% input$opts & !input$by_mp) {
-      p1 = p1 + 
-        geom_text_repel(data = labdat, aes(x = Years, y = q50, label = MPs, color = MPs),
-                        nudge_x = 4, direction = "y", hjust = "left",
-                        size = rpl_sz, segment.linetype = 6)
-    }
-    
     if(!("inc_hist" %in% input$opts)) {
       p1 = p1 + 
         scale_x_continuous(limits = c(my_data()$timeseries$timenow, NA))
@@ -1851,7 +1848,7 @@ server = function(input, output, session) {
     if(!input$by_mp) {
       p1 = p1 + facet_wrap(~ OMs)
     } else {
-      p1 = p1 + facet_grid(MPs ~ OMs)
+      p1 = p1 + theme(legend.position = "none") + facet_grid(MPs ~ OMs)
     }
     
     print(p1)
