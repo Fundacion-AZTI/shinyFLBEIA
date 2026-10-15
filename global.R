@@ -38,34 +38,11 @@ run_locally = TRUE # TRUE = run app locally, FALSE = when deploying on shinyapps
 # IMPORTANT: never commit run_locally = FALSE to Github repo
 
 # -------------------------------------------------------------------------
-# Load deployed MSE datasets ONCE per R worker.
-# These objects are shared by all user sessions handled by the same worker.
-# Local mode keeps the existing per-user upload workflow.
-allowed_MSE = c("NALB", "BET", "YFT", "SKJ", "TROP")
-
+# DEPLOYMENT DATA: load ONE independent MSE result once per R worker.
+# Choose which result is deployed using default_MSE above.
 MSE_GLOBAL = NULL
-if (!isTRUE(run_locally)) {
-  mse_paths = file.path("data", paste0(allowed_MSE, ".flbeia"))
-  names(mse_paths) = allowed_MSE
-  
-  existing = file.exists(mse_paths)
-  if (!any(existing)) {
-    stop("No .flbeia datasets found in data/ for: ", paste(allowed_MSE, collapse = ", "))
-  }
-  
-  MSE_GLOBAL = lapply(mse_paths[existing], readRDS)
-  
-  message(
-    "Loaded global MSE datasets: ",
-    paste(names(MSE_GLOBAL), collapse = ", "),
-    " | total RAM = ",
-    round(as.numeric(object.size(MSE_GLOBAL)) / 1024^2, 1),
-    " MB"
-  )
-}
+MSE_PREPROCESSED = NULL
 
-
-# -------------------------------------------------------------------------
 # Produce data objects that depend only on the MSE file. In deployment mode,
 # this function is called once per dataset and per R worker, not per session.
 preprocess_MSE = function(x) {
@@ -153,13 +130,14 @@ preprocess_MSE = function(x) {
   )
 }
 
-MSE_PREPROCESSED = NULL
 if (!isTRUE(run_locally)) {
-  MSE_PREPROCESSED = lapply(MSE_GLOBAL, preprocess_MSE)
-  message(
-    "Global preprocessed tables created | total RAM = ",
-    round(as.numeric(object.size(MSE_PREPROCESSED)) / 1024^2, 1), " MB"
-  )
+  mse_path = file.path("data", paste0(default_MSE, ".flbeia"))
+  if (!file.exists(mse_path)) stop("FLBEIA dataset not found: ", mse_path)
+  MSE_GLOBAL = readRDS(mse_path)
+  MSE_PREPROCESSED = preprocess_MSE(MSE_GLOBAL)
+  message("Loaded only ", default_MSE, ": object = ",
+          round(as.numeric(object.size(MSE_GLOBAL))/1024^2,1), " MB; preprocessed = ",
+          round(as.numeric(object.size(MSE_PREPROCESSED))/1024^2,1), " MB")
   invisible(gc())
 }
 

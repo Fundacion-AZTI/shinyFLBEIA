@@ -33,39 +33,13 @@ server = function(input, output, session) {
     })
   }
   
-  # shinyapps.io: select an object that was already loaded in global.R.
-  # No readRDS() is performed when a user connects.
   if(!isTRUE(run_locally)) {
-    waiter_show(
-      html = tagList(
-        img(src = "__AZTI_A_principal.png", width = "200px"),
-        h3("Loading FLBEIA Shiny App...")
-      ),
-      color = "rgba(0, 0, 0, 0.7)"
-    )
-    
-    my_data <- reactive({
-      query <- parseQueryString(session$clientData$url_search)
-      dataset_name <- query$dataset
-      
-      if (is.null(dataset_name) || !nzchar(dataset_name)) {
-        dataset_name <- default_MSE
-      }
-      
-      validate(need(
-        dataset_name %in% names(MSE_GLOBAL),
-        paste0("Dataset '", dataset_name, "' is not available.")
-      ))
-      
-      # Return the globally loaded object. R does not deserialize another copy.
-      MSE_GLOBAL[[dataset_name]]
-    })
-    
-    # There is no session-level file loading anymore, so hide immediately.
-    observe({
-      req(my_data())
-      waiter_hide()
-    }, priority = 100)
+    waiter_show(html=tagList(img(src="__AZTI_A_principal.png", width="200px"),
+                             h3("Loading FLBEIA Shiny App...")),
+                color="rgba(0, 0, 0, 0.7)")
+    # One deployment = one MSE result. No per-session readRDS().
+    my_data <- reactive(MSE_GLOBAL)
+    observe({ req(my_data()); waiter_hide() }, priority=100)
   }
   
   # -------------------------------------------------------------------------
@@ -271,23 +245,11 @@ server = function(input, output, session) {
   update_plot_title = reactive ({ tt("update_plot", lang_code()) })
   
   # -------------------------------------------------------------------------
-  # Preprocessed data:
-  # Deployment uses the shared tables built once in global.R. Local uploads are
-  # still preprocessed once inside their own session.
+  # Preprocessed data. Globally shared in deployment mode.
+  # Local upload mode preprocesses the uploaded file within that local session.
   preprocessed_data = reactive({
     req(my_data())
-    if (isTRUE(run_locally)) {
-      preprocess_MSE(my_data())
-    } else {
-      query = parseQueryString(session$clientData$url_search)
-      dataset_name = query$dataset
-      if (is.null(dataset_name) || !nzchar(dataset_name)) dataset_name = default_MSE
-      validate(need(
-        dataset_name %in% names(MSE_PREPROCESSED),
-        paste0("Preprocessed dataset '", dataset_name, "' is not available.")
-      ))
-      MSE_PREPROCESSED[[dataset_name]]
-    }
+    if (isTRUE(run_locally)) preprocess_MSE(my_data()) else MSE_PREPROCESSED
   })
   
   # Preserve the original reactive names used throughout server.R.
