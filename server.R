@@ -1802,12 +1802,13 @@ server = function(input, output, session) {
     # Add axes limits:
     p1 = p1 +
       scale_color_manual(values = my_col_vec()) +
-      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab) +
-      theme(legend.position = "none",
+      labs(y = input$var_ts_uniq, x = my_data()$timeseries$timelab, color = NULL, fill = NULL) +
+      theme(legend.position = "bottom",
             axis.title.x = element_text(size = axs_lbl_sz),
             axis.title.y = element_text(size = axs_lbl_sz),
             axis.text = element_text(size = axs_sz),
             axis.text.y = element_text(angle = 90, hjust = 0.5),
+            legend.text = element_text(size = 14),
             strip.text = element_text(size = fct_ttl_sz, face = "bold"),
             strip.background = element_blank()) +
       scale_y_continuous(labels=function(x) format(x, big.mark = ",", scientific = FALSE),
@@ -1818,13 +1819,6 @@ server = function(input, output, session) {
       geom_line(aes(y = value, color = MPs))
     if("inc_hist" %in% input$opts) {
       p1 = p1 + geom_line(data = histdat, aes(x = Years, y = value), color = "gray80") 
-    }
-    
-    if("inc_mp_lab" %in% input$opts & !input$by_mp) {
-      p1 = p1 + 
-        geom_text_repel(data = labdat, aes(x = Years, y = value, label = MPs, color = MPs),
-                        nudge_x = 4, direction = "y", hjust = "left",
-                        size = rpl_sz, segment.linetype = 6)
     }
     
     if(!("inc_hist" %in% input$opts)) {
@@ -1853,7 +1847,7 @@ server = function(input, output, session) {
     if(!input$by_mp) {
       p1 = p1 + facet_wrap(~ OMs)
     } else {
-      p1 = p1 + facet_grid(MPs ~ OMs)
+      p1 = p1 + theme(legend.position = "none") + facet_grid(MPs ~ OMs)
     }
     
     print(p1)
