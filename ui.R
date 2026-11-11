@@ -286,6 +286,7 @@ ui = fluidPage(
     icon = icon("chart-line", style = "color: #FCDA01;"),
     layout_sidebar(
       sidebar = sidebar(
+        open = TRUE,
         title = div(
           class = "d-flex align-items-center flex-nowrap gap-2",
           uiOutput("about_title_ts", inline = TRUE),
@@ -426,6 +427,7 @@ ui = fluidPage(
     icon = icon("th-large", lib = "glyphicon", style = "color: #FCDA01;"),
     layout_sidebar(
       sidebar = sidebar(
+        open = TRUE,
         title = div(
           class = "d-flex align-items-center flex-nowrap gap-2",
           uiOutput("about_title_kobe", inline = TRUE),
@@ -514,6 +516,7 @@ ui = fluidPage(
     icon = icon("gauge-high", style = "color: #FCDA01;"),
     layout_sidebar(
       sidebar = sidebar(
+        open = TRUE,
         title = div(
           class = "d-flex align-items-center flex-nowrap gap-2",
           uiOutput("about_title_perf", inline = TRUE),
@@ -600,6 +603,7 @@ ui = fluidPage(
     icon = icon("scale-unbalanced", style = "color: #FCDA01;"),
     layout_sidebar(
       sidebar = sidebar(
+        open = TRUE,
         title = div(
           class = "d-flex align-items-center flex-nowrap gap-2",
           uiOutput("about_title_td", inline = TRUE),
@@ -656,6 +660,7 @@ ui = fluidPage(
     icon = icon("ship", style = "color: #FCDA01;"),
     layout_sidebar(
       sidebar = sidebar(
+        open = TRUE,
         title = div(
           class = "d-flex align-items-center flex-nowrap gap-2",
           uiOutput("about_title_fleet", inline = TRUE),

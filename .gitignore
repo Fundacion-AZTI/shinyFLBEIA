@@ -51,5 +51,4 @@ rsconnect/
 
 # Additional files:
 data/
-rsconnect/
 deploy.R

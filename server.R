@@ -1778,19 +1778,18 @@ server = function(input, output, session) {
     # Avoid error messages if variables are not available:
     req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_mult)
     
-    histdat = ts_dat() %>% 
-      dplyr::filter(Stock == these_stocks,
-                    OMs %in% input$om_ts_mult,
-                    Years <= my_data()$timeseries$timenow,
-                    Var == input$var_ts_uniq,
-                    MPs %in% sel_mps_ts(),
-                    Iter == input$i_sel)
-    plotdat = ts_dat() %>% dplyr::filter(Stock == these_stocks,
-                                         OMs %in% input$om_ts_mult,
-                                         Var == input$var_ts_uniq, 
-                                         Years >= my_data()$timeseries$timenow,
-                                         MPs %in% sel_mps_ts(),
-                                         Iter == input$i_sel)
+    tmp <- ts_dat() %>%
+      dplyr::filter(
+        Stock == these_stocks,
+        OMs %in% input$om_ts_mult,
+        Var == input$var_ts_uniq,
+        MPs %in% sel_mps_ts(),
+        Iter == input$i_sel
+      )
+    
+    histdat = tmp %>% 
+      dplyr::filter(Years <= my_data()$timeseries$timenow)
+    plotdat = tmp %>% dplyr::filter(Years >= my_data()$timeseries$timenow)
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
     
     # Save x position for target and limit labels :
