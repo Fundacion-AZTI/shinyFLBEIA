@@ -43,9 +43,171 @@ run_locally = TRUE # TRUE = run app locally, FALSE = when deploying on shinyapps
 MSE_GLOBAL = NULL
 MSE_PREPROCESSED = NULL
 
+# Extract only the requested slice of the time-series array.
+# This avoids melting and storing the complete iteration-level time-series
+# array. The function first subsets the array and then melts only the small
+# requested subset.
+extract_ts_iteration <- function(
+    x,
+    stocks,
+    oms,
+    mps,
+    variable,
+    iteration
+) {
+  
+  # Original time-series array
+  arr <- x$timeseries$value
+  
+  # Check that the array has named dimensions
+  dn <- dimnames(arr)
+  dim_names <- names(dn)
+  
+  if (is.null(dim_names) || any(dim_names == "")) {
+    stop(
+      "x$timeseries$value must have named dimensions. ",
+      "Found dimensions: ",
+      paste(dim_names, collapse = ", ")
+    )
+  }
+  
+  # Dimensions required by the plotting code
+  required_dims <- c(
+    "Stock",
+    "OMs",
+    "MPs",
+    "Var",
+    "Years",
+    "Iter"
+  )
+  
+  missing_dims <- setdiff(required_dims, dim_names)
+  
+  if (length(missing_dims) > 0) {
+    stop(
+      "Missing dimensions in x$timeseries$value: ",
+      paste(missing_dims, collapse = ", ")
+    )
+  }
+  
+  # Convert inputs to character because array dimnames are normally character
+  stocks <- as.character(stocks)
+  oms <- as.character(oms)
+  mps <- as.character(mps)
+  variable <- as.character(variable)
+  iteration <- as.character(iteration)
+  
+  # Check that requested values exist
+  invalid_stocks <- setdiff(stocks, dn[["Stock"]])
+  invalid_oms <- setdiff(oms, dn[["OMs"]])
+  invalid_mps <- setdiff(mps, dn[["MPs"]])
+  invalid_variables <- setdiff(variable, dn[["Var"]])
+  
+  if (length(invalid_stocks) > 0) {
+    stop(
+      "Unknown Stock value(s): ",
+      paste(invalid_stocks, collapse = ", ")
+    )
+  }
+  
+  if (length(invalid_oms) > 0) {
+    stop(
+      "Unknown OM value(s): ",
+      paste(invalid_oms, collapse = ", ")
+    )
+  }
+  
+  if (length(invalid_mps) > 0) {
+    stop(
+      "Unknown MP value(s): ",
+      paste(invalid_mps, collapse = ", ")
+    )
+  }
+  
+  if (length(invalid_variables) > 0) {
+    stop(
+      "Unknown time-series variable(s): ",
+      paste(invalid_variables, collapse = ", ")
+    )
+  }
+  
+  # Iter can be labelled "1", "2", ... or possibly stored differently.
+  # First try exact matching against the iteration dimension names.
+  iter_index <- match(iteration, dn[["Iter"]])
+  
+  # If exact character matching fails, try numeric matching.
+  if (anyNA(iter_index)) {
+    
+    iter_numeric <- suppressWarnings(as.numeric(iteration))
+    dim_iter_numeric <- suppressWarnings(as.numeric(dn[["Iter"]]))
+    
+    iter_index <- match(iter_numeric, dim_iter_numeric)
+  }
+  
+  if (anyNA(iter_index)) {
+    stop(
+      "Requested iteration was not found: ",
+      paste(iteration, collapse = ", ")
+    )
+  }
+  
+  # Create one index for every array dimension.
+  # Unselected dimensions, principally Years, retain all their values.
+  index <- lapply(dim(arr), seq_len)
+  names(index) <- dim_names
+  
+  index[["Stock"]] <- match(stocks, dn[["Stock"]])
+  index[["OMs"]] <- match(oms, dn[["OMs"]])
+  index[["MPs"]] <- match(mps, dn[["MPs"]])
+  index[["Var"]] <- match(variable, dn[["Var"]])
+  index[["Iter"]] <- iter_index
+  
+  # Subset before melting. drop = FALSE is essential because it preserves
+  # all array dimensions even when only one value is selected.
+  arr_subset <- do.call(
+    `[`,
+    c(
+      list(arr),
+      unname(index),
+      list(drop = FALSE)
+    )
+  )
+  
+  # Melt only the requested subset.
+  result <- reshape2::melt(
+    arr_subset,
+    value.name = "value"
+  )
+  
+  # Remove missing elements and restore the factor ordering used elsewhere.
+  result <- result |>
+    stats::na.omit() |>
+    dplyr::mutate(
+      Stock = factor(
+        Stock,
+        levels = x$stocks
+      ),
+      OMs = factor(
+        OMs,
+        levels = x$om$metadata$factor[["en"]]$Factor
+      ),
+      MPs = factor(
+        MPs,
+        levels = x$mp$metadata[["en"]]$Code
+      ),
+      Var = factor(
+        Var,
+        levels = x$timeseries$metadata[["en"]]$Code
+      )
+    )
+  
+  result
+}
+
 # Produce data objects that depend only on the MSE file. In deployment mode,
 # this function is called once per dataset and per R worker, not per session.
 preprocess_MSE = function(x) {
+  
   ts_dat = reshape2::melt(x$timeseries$value) %>% stats::na.omit()
   
   ts_dat_summ = ts_dat %>%
@@ -69,6 +231,12 @@ preprocess_MSE = function(x) {
     dplyr::select(-c(MPs, OMs)) %>%
     dplyr::group_by(Stock, Var, Years) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), mean), .groups = "drop")
+  
+  # The complete melted table is no longer required.
+  # Remove it before Kobe, performance and fleet objects are processed to
+  # reduce peak memory during the remainder of preprocessing.
+  rm(ts_dat)
+  invisible(gc())
   
   tar_lim_dat = data.frame(
     Target = x$timeseries$target, Limit = x$timeseries$limit,
@@ -121,7 +289,7 @@ preprocess_MSE = function(x) {
     )
   
   list(
-    ts_dat = ts_dat, ts_dat_summ = ts_dat_summ,
+    ts_dat_summ = ts_dat_summ,
     ts_dat_hist = ts_dat_hist, tar_lim_dat = tar_lim_dat,
     kobe_dat = kobe_dat, lst_yr_kobe_dat = lst_yr_kobe_dat,
     median_lst_kobe_dat = median_lst_kobe_dat,

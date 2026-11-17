@@ -253,7 +253,6 @@ server = function(input, output, session) {
   })
   
   # Preserve the original reactive names used throughout server.R.
-  ts_dat = reactive(preprocessed_data()$ts_dat)
   ts_dat_summ = reactive(preprocessed_data()$ts_dat_summ)
   ts_dat_hist = reactive(preprocessed_data()$ts_dat_hist)
   tar_lim_dat = reactive(preprocessed_data()$tar_lim_dat)
@@ -263,6 +262,34 @@ server = function(input, output, session) {
   median_frs_kobe_dat = reactive(preprocessed_data()$median_frs_kobe_dat)
   perf_dat = reactive(preprocessed_data()$perf_dat)
   fleet_dat_summ = reactive(preprocessed_data()$fleet_dat_summ)
+  
+  # Extract only the currently requested individual iteration.
+  # This reactive does not create the complete XX MB ts_dat table.
+  # It subsets the original array first and melts only the selected slice.
+  ts_dat_iter = reactive({
+    req(
+      my_data(),
+      input$var_ts_uniq,
+      input$om_ts_mult,
+      input$i_sel,
+      sel_mps_ts()
+    )
+    # Select stock
+    if (my_data()$n_stocks > 1) {
+      these_stocks <- input$stock_ts_uniq
+    } else {
+      these_stocks <- my_data()$stocks
+    }
+    req(these_stocks)
+    extract_ts_iteration(
+      x = my_data(),
+      stocks = these_stocks,
+      oms = input$om_ts_mult,
+      mps = sel_mps_ts(),
+      variable = input$var_ts_uniq,
+      iteration = input$i_sel
+    )
+  })
   
   col_mp_lab = reactive({
     req(my_data())
@@ -1776,20 +1803,26 @@ server = function(input, output, session) {
     }
     
     # Avoid error messages if variables are not available:
-    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_mult)
+    req(input$var_ts_uniq, these_stocks, sel_mps_ts(), input$om_ts_mult, input$i_sel)
     
-    tmp <- ts_dat() %>%
+    # Extracted directly from the original array.
+    # The returned object already contains only the selected stock,
+    # OMs, MPs, variable and iteration.
+    iter_dat <- ts_dat_iter()
+    req(nrow(iter_dat) > 0)
+    # Split historical and projection periods after extracting the
+    # selected subset.
+    histdat <- iter_dat %>%
       dplyr::filter(
-        Stock == these_stocks,
-        OMs %in% input$om_ts_mult,
-        Var == input$var_ts_uniq,
-        MPs %in% sel_mps_ts(),
-        Iter == input$i_sel
+        Years <= my_data()$timeseries$timenow
       )
+    plotdat <- iter_dat %>%
+      dplyr::filter(
+        Years >= my_data()$timeseries$timenow
+      )
+    req(nrow(histdat) > 0, nrow(plotdat) > 0)
     
-    histdat = tmp %>% 
-      dplyr::filter(Years <= my_data()$timeseries$timenow)
-    plotdat = tmp %>% dplyr::filter(Years >= my_data()$timeseries$timenow)
+    # Last Year
     labdat = plotdat %>% dplyr::filter(Years == max(plotdat$Years))
     
     # Save x position for target and limit labels :
@@ -1815,9 +1848,9 @@ server = function(input, output, session) {
     
     # Line:
     p1 = p1 +
-      geom_line(aes(y = value, color = MPs))
+      geom_line(aes(y = value, color = MPs, group = interaction(MPs, OMs)))
     if("inc_hist" %in% input$opts) {
-      p1 = p1 + geom_line(data = histdat, aes(x = Years, y = value), color = "gray80") 
+      p1 = p1 + geom_line(data = histdat, aes(x = Years, y = value, group = interaction(MPs, OMs)), color = "gray80") 
     }
     
     if(!("inc_hist" %in% input$opts)) {
